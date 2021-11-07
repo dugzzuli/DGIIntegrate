@@ -11,7 +11,8 @@ np.random.seed(0)
 from sklearn.metrics import f1_score
 from sklearn.cluster import KMeans
 from sklearn.metrics import normalized_mutual_info_score, pairwise,adjusted_rand_score
-
+import warnings
+warnings.filterwarnings("ignore")
 
 def evaluate(embeds, idx_train, labels, device, isTest=True):
 
@@ -23,7 +24,7 @@ def evaluate(embeds, idx_train, labels, device, isTest=True):
     train_lbls = torch.argmax(labels[0, idx_train], dim=1)
     train_embs = np.array(train_embs.cpu())
     train_lbls = np.array(train_lbls.cpu())
-    nmi,acc,ari,stdacc,stdnmi,stdari=run_kmeans(train_embs, train_lbls, nb_classes)
+    nmi,acc,ari,stdacc,stdnmi,stdari,clu_distance=run_kmeans(train_embs, train_lbls, nb_classes)
     return nmi,acc,ari,stdacc,stdnmi,stdari
 
 def acc_val(y_true, y_pred):
@@ -54,6 +55,7 @@ def run_kmeans(x, y, k):
     ARI_list=[]
     for i in range(1):
         estimator.fit(x)
+
         y_pred = estimator.predict(x)
         acc = acc_val(np.array(y), np.array(y_pred))
         ACM_list.append(acc)
@@ -66,17 +68,17 @@ def run_kmeans(x, y, k):
     acc = sum(ACM_list) / len(ACM_list)
     ari=sum(ARI_list)/len(ARI_list)
 
-    return nmiscore,acc,ari,np.std(ACM_list),np.std(NMI_list),np.std(ARI_list)
+    return nmiscore,acc,ari,np.std(ACM_list),np.std(NMI_list),np.std(ARI_list),estimator.inertia_
 
 def run_kmeans_yypred(y_pred, y):
 
     NMI_list = []
     ACM_list = []
     ARI_list=[]
-    for i in range(1):
+    for i in range(5):
         acc = acc_val(np.array(y), np.array(y_pred))
         ACM_list.append(acc)
-        s1 = normalized_mutual_info_score(y, y_pred, average_method='arithmetic')
+        s1 = normalized_mutual_info_score(y, y_pred)
         ari=adjusted_rand_score(y, y_pred)
         ARI_list.append(ari)
         NMI_list.append(s1)

@@ -1,6 +1,7 @@
 import numpy as np
 
 from utils import process
+from utils.Visualizer import Visualizer
 from utils.utils import mkdir
 
 np.random.seed(0)
@@ -17,8 +18,10 @@ import yaml
 
 if __name__ == '__main__':
 
-    d=['BBC'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
-    atten='False'
+    d=['Reuters'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
+    atten=False
+    # vis = Visualizer("env")
+    vis=None
     for data in d:
         for link in ['Mean']:
             config = yaml.load(open("configMain.yaml", 'r'))
@@ -43,19 +46,34 @@ if __name__ == '__main__':
             parser.add_argument('--Weight', nargs='?', default=config['Weight'])
             
             
-            parser.add_argument('--lr', type=float, default=0.001, help='学习率')
-            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            parser.add_argument('--lr', type=float, default=0.01, help='学习率')
+            parser.add_argument('--hid_units', type=int, default=256, help='低维特征维度')
             parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
-            parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+            parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
 
+            #3Source
+            # parser.add_argument('--lr', type=float, default=0.001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=128, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.00001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
+
+            #BBCSport
+            # parser.add_argument('--lr', type=float, default=0.001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+
+            #BBC
             # parser.add_argument('--lr', type=float, default=0.01, help='学习率')
             # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
             # parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
             # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
-            
-                
+
             args, unknown = parser.parse_known_args()
-                        
+
+            args.vis=vis
+            args.Fine = True
+
             print(args)
 
             resultsDir = 'baseline/{}/{}/{}'.format(args.isMeanOrCat,args.embedder,args.dataset)

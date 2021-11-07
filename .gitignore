@@ -1,2 +1,5 @@
 Database/
 saved_model/
+final_model/
+.vscode/
+.history/

@@ -15,30 +15,46 @@ from evaluate import evaluate
 from models import LogReg
 import pickle as pkl
 from tqdm import tqdm
+import torch.nn.functional as F
 
-class DMGI(embedder):
+class Loss(nn.Module):
+    def __init__(self, tau2):
+        super().__init__()
+        self.tau2 = tau2
+
+    def forward(self,ff):
+
+        norm_ff = ff / (ff ** 2).sum(0, keepdim=True).sqrt()
+        coef_mat = torch.mm(norm_ff.t(), norm_ff)
+        coef_mat.div_(self.tau2)
+        a = torch.arange(coef_mat.size(0), device=coef_mat.device)
+        L_fd = F.cross_entropy(coef_mat, a)
+        return L_fd
+
+class DMGICCM(embedder):
     def __init__(self, args):
         embedder.__init__(self, args)
         self.args = args
 
-    def training(self,f):
+    def training(self, f):
         features = [feature.to(self.args.device) for feature in self.features]
         adj = [adj_.to(self.args.device) for adj_ in self.adj]
         model = modeler(self.args).to(self.args.device)
         optimiser = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=self.args.l2_coef)
         cnt_wait = 0;
         best = 1e9
+        ffLoss=Loss(tau2=1.0)
         b_xent = nn.BCEWithLogitsLoss()
-        iters=tqdm(range(self.args.nb_epochs))
-        accMax=-1
-        minclu_distance=1000
+        iters = tqdm(range(self.args.nb_epochs))
+        accMax = -1
+        minclu_distance = 1000
         nmiMax = -1
-        ariMax=-1
-        curepoch=-1
-        min_curepoh=-1
+        ariMax = -1
+        curepoch = -1
+        min_curepoh = -1
         showResults = {}
-        retxt=""
-        if(self.args.Fine):
+        retxt = ""
+        if (self.args.Fine):
             for epoch in iters:
 
                 model.train()
@@ -56,19 +72,18 @@ class DMGI(embedder):
 
                 result = model(features, adj, shuf, self.args.sparse, None, None, None)
                 logits = result['logits']
+                hlist=result['hlist']
 
                 for view_idx, logit in enumerate(logits):
                     if xent_loss is None:
-                        xent_loss = b_xent(logit, lbl)
+                        xent_loss = b_xent(logit, lbl)+ffLoss(torch.squeeze(hlist[view_idx]))*0.1
                     else:
-                        xent_loss += b_xent(logit, lbl)
+                        xent_loss += b_xent(logit, lbl)+ffLoss(torch.squeeze(hlist[view_idx]))*0.1
 
                 loss = xent_loss
 
                 reg_loss = result['reg_loss']
                 loss += self.args.reg_coef * reg_loss
-
-
 
                 if loss < best:
                     best = loss
@@ -76,39 +91,37 @@ class DMGI(embedder):
 
                     # torch.save(model.state_dict(), 'saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder))
                 else:
-                    cnt_wait =+ 1
+                    cnt_wait = + 1
 
                 if cnt_wait == self.args.patience:
                     break
-
-
-
 
                 loss.backward()
                 optimiser.step()
 
                 # Evaluation
-                if(epoch%5)==0:
+                if (epoch % 5) == 0:
                     # print(loss)
                     model.eval()
 
-                    nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
-                    if(accMax<acc):
-                        accMax=acc
-                        nmiMax=nmi
-                        ariMax=ari
-                        curepoch=epoch
-                        savePath="saved_model/{}/".format(self.args.dataset)
+                    nmi, acc, ari, stdacc, stdnmi, stdari = evaluate(model.H.data.detach(), self.idx_train, self.labels,
+                                                                     self.args.device)
+                    if (accMax < acc):
+                        accMax = acc
+                        nmiMax = nmi
+                        ariMax = ari
+                        curepoch = epoch
+                        savePath = "saved_model/{}/".format(self.args.dataset)
                         mkdir(savePath)
                         torch.save(model.state_dict(),
-                                   savePath+'best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder,self.args.isMeanOrCat))
+                                   savePath + 'best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder,
+                                                                         self.args.isMeanOrCat))
 
-
-
-                    retxt="loss:{} epoch:{} acc:{} nmi:{} accMax:{} nmiMax:{} ariMax:{} curepoch:{}".format(loss.item(),epoch,acc,nmi,accMax,nmiMax,ariMax,curepoch)
+                    retxt = "loss:{} epoch:{} acc:{} nmi:{} accMax:{} nmiMax:{} ariMax:{} curepoch:{}".format(
+                        loss.item(), epoch, acc, nmi, accMax, nmiMax, ariMax, curepoch)
                     iters.set_description(retxt)
 
-                    showResults["acc"]=acc
+                    showResults["acc"] = acc
                     showResults["accMax"] = accMax
                     if self.args.vis is not None:
                         self.args.vis.plot_many_stack(showResults)
@@ -117,11 +130,14 @@ class DMGI(embedder):
                     # f.write('\n')
                     # print()
 
-        model.load_state_dict(torch.load('saved_model/{}/best_{}_{}_{}.pkl'.format(self.args.dataset,self.args.dataset, self.args.embedder,self.args.isMeanOrCat)),False)
+        model.load_state_dict(torch.load(
+            'saved_model/{}/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.dataset, self.args.embedder,
+                                                      self.args.isMeanOrCat)), False)
         model.eval()
 
-        nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
-        return nmi,acc,ari,stdacc,stdnmi,stdari,retxt
+        nmi, acc, ari, stdacc, stdnmi, stdari = evaluate(model.H.data.detach(), self.idx_train, self.labels,
+                                                         self.args.device)
+        return nmi, acc, ari, stdacc, stdnmi, stdari, retxt
 
 
 class modeler(nn.Module):
@@ -169,9 +185,7 @@ class modeler(nn.Module):
             logits.append(logit)
 
         result['logits'] = logits
-
-
-
+        result['hlist'] = h_1_all
 
         # Attention or not
         if self.args.isAttn:
@@ -204,8 +218,6 @@ class modeler(nn.Module):
         pos_reg_loss = ((self.H - h_1_all) ** 2).sum()
         neg_reg_loss = ((self.H - h_2_all) ** 2).sum()
         reg_loss = pos_reg_loss - neg_reg_loss
-        # reg_loss = pos_reg_loss
-        # reg_loss=reg_loss if reg_loss >0 else 10
         result['reg_loss'] = reg_loss
 
         # self.h_1_all=h_1_all

@@ -5,4 +5,5 @@ from .discriminator import Discriminator
 from .attention import Attention
 from .attention import AttentionNoALL
 from .AutoEncoder import AutoEncoder
+from .discriminator import InterDiscriminator
 

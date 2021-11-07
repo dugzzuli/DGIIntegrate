@@ -6,3 +6,7 @@ from .DGIAE import DGIAE
 from .Decoder import Decoder
 from .AE import AE
 from .DMGIAE import DMGIAE
+from .DMGIDEC import DMGIDEC
+from .DMGICCM import DMGICCM
+from .DMGIDECSUP import DMGIDECSUP
+from .DMGINoL2 import DMGINoL2

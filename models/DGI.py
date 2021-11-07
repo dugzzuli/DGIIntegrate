@@ -61,6 +61,14 @@ class DGI(embedder):
                 loss.backward()
                 optimiser.step()
 
+                with torch.no_grad():
+                    embeds, _ = model.embed(features, adj, self.args.sparse)
+                    nmi, acc, ari, stdacc, stdnmi, stdari = evaluate(embeds, self.idx_train, self.labels,
+                                                                     self.args.device)
+                    retxt = "metapath={} loss:{} epoch:{} acc:{} nmi:{}  curepoch:{}".format(metapath, loss.item(),
+                                                                                             epoch, acc, nmi, epoch)
+                    print(retxt)
+
             model.load_state_dict(torch.load('saved_model/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder, metapath)))
 
             # Evaluation

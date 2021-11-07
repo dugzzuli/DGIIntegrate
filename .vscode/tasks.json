@@ -6,7 +6,7 @@
         {
             "label": "Run Pyhton Code",
             "type": "shell",
-            "command": "/home/dugking/anaconda3/bin/python",
+            "command": "python",
             "args": [
                 "'${file}'"
             ],

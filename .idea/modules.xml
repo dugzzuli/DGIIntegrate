@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/MVCDGI2021.iml" filepath="$PROJECT_DIR$/.idea/MVCDGI2021.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/DGIIntegrate.iml" filepath="$PROJECT_DIR$/.idea/DGIIntegrate.iml" />
     </modules>
   </component>
 </project>
