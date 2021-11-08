@@ -44,12 +44,24 @@ if __name__ == '__main__':
             
             parser.add_argument('--isMeanOrCat', nargs='?', default=link) #config[data]['isMeanOrCat']
             parser.add_argument('--Weight', nargs='?', default=config['Weight'])
-            
-            
-            parser.add_argument('--lr', type=float, default=0.01, help='学习率')
-            parser.add_argument('--hid_units', type=int, default=256, help='低维特征维度')
-            parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
-            parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
+
+
+            # parser.add_argument('--lr', type=float, default=0.01, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=256, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.00001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
+
+            #small_Reuters
+            # parser.add_argument('--lr', type=float, default=0.01, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=256, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.01, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
+
+            #Reuters
+            parser.add_argument('--lr', type=float, default=0.001, help='学习率')
+            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            parser.add_argument('--l2_coef', type=float, default=0.00001, help='l2_coef')
+            parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
 
             #3Source
             # parser.add_argument('--lr', type=float, default=0.001, help='学习率')
@@ -72,7 +84,7 @@ if __name__ == '__main__':
             args, unknown = parser.parse_known_args()
 
             args.vis=vis
-            args.Fine = True
+            args.Fine = False
 
             print(args)
 
@@ -81,6 +93,7 @@ if __name__ == '__main__':
             
             filePath = os.path.join(resultsDir, '{}_{}_{}_{}_sc.{}.txt'.format('Y 'if args.Weight else 'N',args.dataset,args.isMeanOrCat,config[args.dataset]['norm'],args.sc))
 
+            args.pretrain_path = "./final_model/best_Reuters_DMGI_Mean.pkl"
             
             with open(filePath, 'a+') as f:
                 f.write("SC:{}\n".format(args.sc))

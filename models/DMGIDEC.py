@@ -74,7 +74,7 @@ class DMGIDEC(embedder):
             lbl_1 = torch.ones(self.args.batch_size, self.args.nb_nodes)
             lbl_2 = torch.zeros(self.args.batch_size, self.args.nb_nodes)
             lbl = torch.cat((lbl_1, lbl_2), 1).to(self.args.device)
-            if epoch % 20 == 0:
+            if epoch % self.args.T == 0:
                 with torch.no_grad():
                     _, tmp_q, zTemp = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
                 tmp_q = tmp_q.data
@@ -141,14 +141,14 @@ class DMGIDEC(embedder):
 
         with torch.no_grad():
             _, tmp_q, zTemp = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
-        tmp_q = tmp_q.data
+            tmp_q = tmp_q.data
 
-        y_pred = tmp_q.cpu().numpy().argmax(1)
+            y_pred = tmp_q.cpu().numpy().argmax(1)
 
-        train_lbls = torch.argmax(self.labels[0, :], dim=1)
-        train_lbls = np.array(train_lbls.cpu())
-        nmi,acc,ari,stdacc,stdnmi,stdari=run_kmeans_yypred(y_pred, train_lbls)
-        return nmi,acc,ari,stdacc,stdnmi,stdari,""
+            train_lbls = torch.argmax(self.labels[0, :], dim=1)
+            train_lbls = np.array(train_lbls.cpu())
+            nmi,acc,ari,stdacc,stdnmi,stdari=run_kmeans_yypred(y_pred, train_lbls)
+            return nmi,acc,ari,stdacc,stdnmi,stdari,""
 
 class modeler(nn.Module):
     def __init__(self, args):

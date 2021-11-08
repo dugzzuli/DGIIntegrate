@@ -81,12 +81,8 @@ class DMGI(embedder):
                 if cnt_wait == self.args.patience:
                     break
 
-
-
-
                 loss.backward()
                 optimiser.step()
-
                 # Evaluation
                 if(epoch%5)==0:
                     # print(loss)
@@ -112,12 +108,13 @@ class DMGI(embedder):
                     showResults["accMax"] = accMax
                     if self.args.vis is not None:
                         self.args.vis.plot_many_stack(showResults)
-                    # self.args.vis.plot_many_stack({"dis:": clu_distance})
+                        self.args.vis.plot_many_stack({"loss:": loss.item()})
                     # f.write("loss:{} epoch:{} acc:{} nmi:{} accMax:{} nmiMax:{} curepoch:{}".format(loss.item(),epoch,acc,nmi,accMax,nmiMax,curepoch))
                     # f.write('\n')
                     # print()
-
-        model.load_state_dict(torch.load('saved_model/{}/best_{}_{}_{}.pkl'.format(self.args.dataset,self.args.dataset, self.args.embedder,self.args.isMeanOrCat)),False)
+        # args.pretrain_path = "./final_model/best_Reuters_DMGI_Mean.pkl"
+        # model.load_state_dict(torch.load('saved_model/{}/best_{}_{}_{}.pkl'.format(self.args.dataset,self.args.dataset, self.args.embedder,self.args.isMeanOrCat)),False)
+        model.load_state_dict(torch.load("./final_model/best_Reuters_DMGI_Mean.pkl"),False)
         model.eval()
 
         nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)

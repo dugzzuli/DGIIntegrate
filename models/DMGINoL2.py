@@ -18,6 +18,7 @@ import pickle as pkl
 from tqdm import tqdm
 
 # 学习不衰减，效果不好
+# 主要想探索一下学习率的影响。
 class DMGINoL2(embedder):
     def __init__(self, args):
         embedder.__init__(self, args)
