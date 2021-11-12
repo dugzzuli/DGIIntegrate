@@ -10,3 +10,5 @@ from .DMGIDEC import DMGIDEC
 from .DMGICCM import DMGICCM
 from .DMGIDECSUP import DMGIDECSUP
 from .DMGINoL2 import DMGINoL2
+from .DMGIDEC_DFCN import DMGIDEC_DFCN
+from .DMGIRCGraph import DMGIRCGraph

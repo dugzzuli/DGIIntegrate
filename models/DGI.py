@@ -30,6 +30,8 @@ class DGI(embedder):
             optimiser = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=self.args.l2_coef)
             cnt_wait = 0; best = 1e9
             b_xent = nn.BCEWithLogitsLoss()
+
+            accMax = -1
             for epoch in range(self.args.nb_epochs):
                 model.train()
                 optimiser.zero_grad()
@@ -51,7 +53,7 @@ class DGI(embedder):
                 if loss < best:
                     best = loss
                     cnt_wait = 0
-                    torch.save(model.state_dict(), 'saved_model/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder, metapath))
+
                 else:
                     cnt_wait += 1
 
@@ -68,6 +70,13 @@ class DGI(embedder):
                     retxt = "metapath={} loss:{} epoch:{} acc:{} nmi:{}  curepoch:{}".format(metapath, loss.item(),
                                                                                              epoch, acc, nmi, epoch)
                     print(retxt)
+
+                    if (accMax < acc):
+                        model.eval()
+                        accMax = acc
+
+                        torch.save(model.state_dict(),
+                               'saved_model/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder, metapath))
 
             model.load_state_dict(torch.load('saved_model/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder, metapath)))
 

@@ -32,8 +32,7 @@ class DGDEC(embedder):
 
         final_embeds = []
         final_labels = []
-        initCenter=None
-        initCenterIs=True
+
         for m_idx, (features, adj) in enumerate(zip(features_lst, adj_lst)):
 
             self.args.m_idx=m_idx
@@ -64,6 +63,9 @@ class DGDEC(embedder):
             optimiser = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=self.args.l2_coef)
             cnt_wait = 0; best = 1e9
             b_xent = nn.BCEWithLogitsLoss()
+
+            accMax = -1
+
             for epoch in range(self.args.nb_epochs):
                 model.train()
                 optimiser.zero_grad()
@@ -78,7 +80,7 @@ class DGDEC(embedder):
                 lbl = lbl.to(self.args.device)
 
                 # update target distribution p
-                if epoch % 1 == 0:
+                if epoch % self.args.T == 0:
                     with torch.no_grad():
                         _, tmp_q, zTemp = model(features, shuf_fts, adj, self.args.sparse, None, None, None)
 
@@ -89,37 +91,37 @@ class DGDEC(embedder):
                     eva(y, res1, str(epoch) + 'Q')
 
                     res3 = p.data.cpu().numpy().argmax(1)  # P
-                    eva(y, res3, str(epoch) + 'P')
+                    acc,nmi,ari,_,_,_=eva(y, res3, str(epoch) + 'P')
 
                     delta_label = np.sum(res3 != y_pred_last).astype(
                         np.float32) / res3.shape[0]
                     y_pred_last = res3
 
-                    # if epoch > 0 and delta_label < self.args.tol:
-                    #     print('delta_label {:.4f}'.format(delta_label), '< tol',
-                    #           self.args.tol)
-                    #     print('Reached tolerance threshold. Stopping training.')
-                    #     break
+                    if epoch > 0 and delta_label < self.args.tol:
+                        print('delta_label {:.4f}'.format(delta_label), '< tol',
+                              self.args.tol)
+                        print('Reached tolerance threshold. Stopping training.')
+                        break
 
                     kmeans = KMeans(n_clusters=self.args.nb_classes, n_init=20)  # n_init：用不同的聚类中心初始化值运行算法的次数
                     res_k = kmeans.fit_predict(zTemp.data.cpu().numpy())  # 训练并直接预测
                     eva(y, res_k, str(epoch) + 'k')
 
+                    if (accMax < acc):
+                        model.eval()
+                        accMax = acc
+
+                        torch.save(model.state_dict(), 'saved_model/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder, m_idx+1))
 
 
                 logits, q, zTemp = model(features, shuf_fts, adj, self.args.sparse, None, None, None)
-
                 loss_kl = F.kl_div(q.log(), p, reduction='batchmean')  # 第一个参数传入的是一个对数概率矩阵，第二个参数传入的是概率矩阵。
                 loss_xent = b_xent(logits, lbl)
-
-
                 loss = 0.1 * loss_kl + loss_xent
-
-
                 if loss < best:
                     best = loss
                     cnt_wait = 0
-                    torch.save(model.state_dict(), 'saved_model/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder, m_idx+1))
+
                 else:
                     cnt_wait += 1
 
@@ -129,12 +131,14 @@ class DGDEC(embedder):
                 loss.backward()
                 optimiser.step()
 
+
             model.load_state_dict(torch.load('saved_model/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder, m_idx+1)))
 
             # Evaluation
             embeds, _ ,cluq = model.embed(features, adj, self.args.sparse,None)
-            res4 = cluq.cpu().numpy().argmax(1)  # Q
 
+            p = target_distribution(cluq)
+            res4 = p.cpu().numpy().argmax(1)  # Q
             acc, nmi, ari, stdacc, stdnmi, stdari =eva(y, res4, str(epoch) + 'P')
             retxt = "metapath={} loss:{} epoch:{} acc:{} nmi:{}  curepoch:{}".format(m_idx+1, loss.item(), epoch, acc,
                                                                                            nmi, epoch)

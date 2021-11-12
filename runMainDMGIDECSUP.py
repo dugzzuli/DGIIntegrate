@@ -42,12 +42,12 @@ if __name__ == '__main__':
             parser.add_argument('--isMeanOrCat', nargs='?', default=link) #config[data]['isMeanOrCat']
             parser.add_argument('--Weight', nargs='?', default=config['Weight'])
 
-            parser.add_argument('--lambdapra', type=float, default=100.0, help='lambdapra')
-            parser.add_argument('--lambdaprasoft', type=float, default=0.1, help='lambdapra')
+            parser.add_argument('--lambdapra', type=float, default=0.1, help='lambdapra')
+            parser.add_argument('--lambdaprasoft', type=float, default=0.01, help='lambdapra')
             parser.add_argument('--n_h', type=int, default=512, help='低维特征维度')
-            parser.add_argument('--lr', type=float, default=0.1, help='学习率')
+            parser.add_argument('--lr', type=float, default=0.001, help='学习率')
             parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
+            parser.add_argument('--l2_coef', type=float, default=0, help='l2_coef')
             parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
             parser.add_argument('--tol', type=float, default=-1, help='reg_coef')
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
                 f.write("SC:{}\n".format(args.sc))
                 f.flush()
                 
-                rownetworks, truefeatures_list, labels, idx_train=process.load_data_mv(args,Unified=False)
+                rownetworks, truefeatures_list, labels, idx_train=process.load_data_mv(args,Unified=True)
 
                 args.rownetworks, args.truefeatures_list, args.labels, args.idx_train=rownetworks, truefeatures_list, labels, idx_train 
                 

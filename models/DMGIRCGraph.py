@@ -1,5 +1,6 @@
 import torch
 
+from utils import process
 from utils.utils import mkdir
 
 torch.manual_seed(0)
@@ -15,8 +16,8 @@ from evaluate import evaluate
 from models import LogReg
 import pickle as pkl
 from tqdm import tqdm
-from utils.calcu_graph import construct_graph
-class DMGI(embedder):
+from utils.calcu_graph import construct_graph,load_graph
+class DMGIRCGraph(embedder):
     def __init__(self, args):
         embedder.__init__(self, args)
         self.args = args
@@ -84,11 +85,34 @@ class DMGI(embedder):
                 loss.backward()
                 optimiser.step()
                 # Evaluation
-                if(epoch%5)==0:
+                if((epoch+1)%5)==0:
                     # print(loss)
                     model.eval()
 
                     nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
+
+                    if ((epoch+1) % 200) == 0:
+                        print("更新W")
+                        import scipy.sparse as sp
+
+                        genePath = "generateW/{}/".format(self.args.dataset)
+                        geW = genePath + 'W.txt'
+
+                        construct_graph(model.H.data.detach(), geW, graph=self.labels)
+
+                        label_file = './Database/' + self.args.dataset + '/group.txt'
+                        tempW=load_graph(label_file,geW)
+                        tempadj_1 = [sp.csr_matrix(tempW + np.eye(self.args.nb_nodes) * self.args.sc) for _ in range(self.args.nb_graphs)]
+
+                        tempadj_2 = [process.normalize_adj(adj_) for adj_ in tempadj_1]
+                        tempadj_3 = [process.sparse_mx_to_torch_sparse_tensor(adj_) for adj_ in tempadj_2]
+                        adj = [adj_.to(self.args.device) for adj_ in tempadj_3]
+
+
+
+
+
+
                     if(accMax<acc):
                         accMax=acc
                         nmiMax=nmi
@@ -119,8 +143,7 @@ class DMGI(embedder):
 
         nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
 
-        genePath="generateW/{}/".format(self.args.dataset)
-        construct_graph(model.H.data.detach(),genePath+'W.txt',graph=self.labels)
+
 
         return nmi,acc,ari,stdacc,stdnmi,stdari,retxt
 

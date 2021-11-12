@@ -50,7 +50,7 @@ def load_data_mv(args,Unified=False):
     if(Unified):
         temp=np.zeros_like(graph.W[0])
         for rownetwork in graph.W:
-            temp=np.multiply(temp,rownetwork)
+            temp=np.add(temp,rownetwork)
         rownetworks = [sp.csr_matrix(temp + np.eye(graph.num_nodes) * sc) for rownetwork in graph.W]
     else:
         rownetworks = [sp.csr_matrix(rownetwork + np.eye(graph.num_nodes) * sc) for rownetwork in graph.W]

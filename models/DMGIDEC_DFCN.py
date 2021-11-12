@@ -1,6 +1,5 @@
 import torch
 
-from layers.Classify import Classify
 from models.DGDEC import target_distribution
 from utils.evaluation import eva
 from utils.utils import mkdir
@@ -22,7 +21,7 @@ from torch.nn import Parameter
 from sklearn.cluster import KMeans
 import torch.nn.functional as F
 
-class DMGIDECSUP(embedder):
+class DMGIDEC_DFCN(embedder):
     def __init__(self, args):
         embedder.__init__(self, args)
         self.args = args
@@ -65,7 +64,6 @@ class DMGIDECSUP(embedder):
 
             model.train()
             xent_loss = None
-            sofaloss=None
             model.train()
             optimiser.zero_grad()
             idx = np.random.permutation(self.args.nb_nodes)
@@ -76,12 +74,17 @@ class DMGIDECSUP(embedder):
             lbl_1 = torch.ones(self.args.batch_size, self.args.nb_nodes)
             lbl_2 = torch.zeros(self.args.batch_size, self.args.nb_nodes)
             lbl = torch.cat((lbl_1, lbl_2), 1).to(self.args.device)
-            if epoch % 1 == 0:
+            if epoch % self.args.T == 0:
                 with torch.no_grad():
-                    _, tmp_q, zTemp,_ = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
+                    _, tmp_q, zTemp,temp_q_list = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
                 tmp_q = tmp_q.data
-                p = target_distribution(tmp_q)
 
+                p = target_distribution(tmp_q)
+                for each_q in temp_q_list:
+
+                    p = p+ target_distribution(each_q.data)
+
+                p=p/(self.args.nb_classes)
                 res1 = tmp_q.cpu().numpy().argmax(1)  # Q
                 try:
                     eva(y, res1, str(epoch) + 'Q',Flag=True)
@@ -115,51 +118,48 @@ class DMGIDECSUP(embedder):
                     print('Reached tolerance threshold. Stopping training.')
                     break
 
-            result, q, zTemp,preList = model(features, adj, shuf, self.args.sparse, None, None, None)
-            loss_kl = F.kl_div(q.log(), p, reduction='batchmean')  # 第一个参数传入的是一个对数概率矩阵，第二个参数传入的是概率矩阵。
+            result, q, zTemp,q_list_eachview = model(features, adj, shuf, self.args.sparse, None, None, None)
 
+
+            loss_kl = F.kl_div(q.log()
+                               , p, reduction='batchmean')  # 第一个参数传入的是一个对数概率矩阵，第二个参数传入的是概率矩阵。
+            for temp_q in q_list_eachview:
+                loss_kl =loss_kl+ F.kl_div(temp_q.log()
+                                   , p, reduction='batchmean')  # 第一个
 
             logits = result['logits']
             for view_idx, logit in enumerate(logits):
                 if xent_loss is None:
-
                     xent_loss = b_xent(logit, lbl)
-
-                    sofaloss=F.cross_entropy(preList[view_idx],torch.argmax(p, axis=1))
-
-                    # sofaloss=F.cross_entropy(preList[view_idx],torch.argmax(p, axis=1))
                 else:
                     xent_loss += b_xent(logit, lbl)
-                    sofaloss=F.cross_entropy(preList[view_idx],torch.argmax(p, axis=1))
 
-            loss = xent_loss+loss_kl*self.args.lambdapra+sofaloss*self.args.lambdaprasoft
-
+            loss = xent_loss+loss_kl*self.args.lambdapra
             reg_loss = result['reg_loss']
             loss += self.args.reg_coef * reg_loss
             if loss < best:
                 best = loss
                 cnt_wait = 0
-                torch.save(model.state_dict(), 'saved_model/{}/best_{}_{}.pkl'.format(self.args.dataset,self.args.dataset, self.args.embedder,self.args.isMeanOrCat))
+                torch.save(model.state_dict(), 'saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder))
             else:
                 cnt_wait =+ 1
             if cnt_wait == self.args.patience:
                 break
-
             loss.backward()
             optimiser.step()
 
-        model.load_state_dict('saved_model/{}/best_{}_{}.pkl'.format(self.args.dataset,self.args.dataset, self.args.embedder,self.args.isMeanOrCat))
+        model.load_state_dict(torch.load('saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder)))
 
         with torch.no_grad():
             _, tmp_q, zTemp,_ = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
-        tmp_q = tmp_q.data
+            tmp_q = tmp_q.data
 
-        y_pred = tmp_q.cpu().numpy().argmax(1)
+            y_pred = tmp_q.cpu().numpy().argmax(1)
 
-        train_lbls = torch.argmax(self.labels[0, :], dim=1)
-        train_lbls = np.array(train_lbls.cpu())
-        nmi,acc,ari,stdacc,stdnmi,stdari=run_kmeans_yypred(y_pred, train_lbls)
-        return nmi,acc,ari,stdacc,stdnmi,stdari,""
+            train_lbls = torch.argmax(self.labels[0, :], dim=1)
+            train_lbls = np.array(train_lbls.cpu())
+            nmi,acc,ari,stdacc,stdnmi,stdari=run_kmeans_yypred(y_pred, train_lbls)
+            return nmi,acc,ari,stdacc,stdnmi,stdari,""
 
 class modeler(nn.Module):
     def __init__(self, args):
@@ -171,9 +171,6 @@ class modeler(nn.Module):
         # cluster layer
         self.cluster_layer = Parameter(torch.Tensor(self.args.nb_classes, self.args.n_h))  # 对权重进行初始化
         torch.nn.init.xavier_normal_(self.cluster_layer.data)
-
-        self.cla=[Classify(n_input=self.args.n_h,inter_dims=[256,128],active=True,logits=self.args.nb_classes).cuda() for _ in range(args.nb_graphs)]
-
     def pretrain(self, path=''):
         # load pretrain weights
         # --ae.load_state_dict：将torch.load加载出来的数据加载到net中
@@ -193,13 +190,17 @@ class modeler(nn.Module):
         q = q.pow((1 + 1.0) / 2.0)
         q = (q.t() / torch.sum(q, 1)).t()
 
-        preList=[]
-        for mcla,hidden_each in zip(self.cla,h_list):
-            pre_temp=mcla(hidden_each)
-            preList.append(pre_temp)
+        q_list=[]
+        for h_single in h_list:
+            temp_q = 1.0 / (1.0 + torch.sum(
+                torch.pow(torch.squeeze(h_single).unsqueeze(1) - self.cluster_layer, 2), 2) / 1)
+            temp_q = temp_q.pow((1 + 1.0) / 2.0)
+            temp_q = (temp_q.t() / torch.sum(temp_q, 1)).t()
+            q_list.append(temp_q)
 
 
-        return result, q, torch.squeeze(H),preList
+
+        return result, q, torch.squeeze(H),q_list
 
 class DMGI(nn.Module):
     def __init__(self, args):

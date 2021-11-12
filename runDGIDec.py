@@ -17,7 +17,7 @@ import yaml
 
 if __name__ == '__main__':
 
-    d=['3sources'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
+    d=['Reuters'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
     for data in d:
         config = yaml.load(open("configMain.yaml", 'r'))
 
@@ -32,16 +32,15 @@ if __name__ == '__main__':
         parser.add_argument('--gpu_num', type=int, default=0)
         parser.add_argument('--drop_prob', type=float, default=0.2)
         parser.add_argument('--patience', type=int, default=100)
-        parser.add_argument('--nheads', type=int, default=1)
         parser.add_argument('--activation', nargs='?', default='leakyrelu')
         parser.add_argument('--isBias',default=False)
         parser.add_argument('--Weight', nargs='?', default=config['Weight'])
-        parser.add_argument('--lr', type=float, default=0.0001, help='学习率')
+        parser.add_argument('--lr', type=float, default=0.001, help='学习率')
         parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
         parser.add_argument('--n_h', type=int, default=512, help='低维特征维度')
         parser.add_argument('--l2_coef', type=float, default=0.01, help='l2_coef')
-        parser.add_argument('--reg_coef', type=float, default=0.01, help='reg_coef')
         parser.add_argument('--tol', type=float, default=0.0001, help='tol')
+        parser.add_argument('--T', type=int, default=5, help='T')
 
 
 
@@ -70,8 +69,8 @@ if __name__ == '__main__':
             from models import DGDEC
             embedder = DGDEC(args)
             nmi, acc, ari, stdacc, stdnmi, stdari = embedder.training(f)
-            result = "hid_units:{},lr:{},l2_coef:{},reg_coef:{},acc:{},nmi:{},Ari:{},stdnmi:{},stdacc:{},stdari:{}".format(
-                args.hid_units, args.lr, args.l2_coef, args.reg_coef, acc, nmi, ari, stdacc, stdnmi, stdari)
+            result = "hid_units:{},lr:{},l2_coef:{},acc:{},nmi:{},Ari:{},stdnmi:{},stdacc:{},stdari:{}".format(
+                args.hid_units, args.lr, args.l2_coef, acc, nmi, ari, stdacc, stdnmi, stdari)
 
             f.write(result)
             f.write('\n')
