@@ -18,7 +18,7 @@ import yaml
 
 if __name__ == '__main__':
 
-    d=['3sources'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
+    d=['BBCSport'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
     atten=False
     # vis = Visualizer("env")
     vis=None
@@ -58,10 +58,10 @@ if __name__ == '__main__':
             # parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
 
             #Reuters
-            parser.add_argument('--lr', type=float, default=0.001, help='学习率')
-            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            parser.add_argument('--l2_coef', type=float, default=0.00001, help='l2_coef')
-            parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
+            # parser.add_argument('--lr', type=float, default=0.001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.00001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
 
             #3Source
             # parser.add_argument('--lr', type=float, default=0.001, help='学习率')
@@ -70,10 +70,10 @@ if __name__ == '__main__':
             # parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
 
             #BBCSport
-            # parser.add_argument('--lr', type=float, default=0.001, help='学习率')
-            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            # parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
-            # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+            parser.add_argument('--lr', type=float, default=0.001, help='学习率')
+            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
+            parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
 
             # BBC
             # parser.add_argument('--lr', type=float, default=0.01, help='学习率')

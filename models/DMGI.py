@@ -12,10 +12,8 @@ from layers import GCN, Discriminator, Attention
 import numpy as np
 np.random.seed(0)
 from evaluate import evaluate
-from models import LogReg
-import pickle as pkl
+
 from tqdm import tqdm
-from utils.calcu_graph import construct_graph
 class DMGI(embedder):
     def __init__(self, args):
         embedder.__init__(self, args)
@@ -42,8 +40,8 @@ class DMGI(embedder):
             for epoch in iters:
 
                 model.train()
+
                 xent_loss = None
-                model.train()
                 optimiser.zero_grad()
                 idx = np.random.permutation(self.args.nb_nodes)
 
@@ -84,7 +82,7 @@ class DMGI(embedder):
                 loss.backward()
                 optimiser.step()
                 # Evaluation
-                if(epoch%5)==0:
+                if(epoch%1)==0:
                     # print(loss)
                     model.eval()
 
@@ -106,21 +104,20 @@ class DMGI(embedder):
 
                     showResults["acc"]=acc
                     showResults["accMax"] = accMax
+
                     if self.args.vis is not None:
                         self.args.vis.plot_many_stack(showResults)
                         self.args.vis.plot_many_stack({"loss:": loss.item()})
-                    # f.write("loss:{} epoch:{} acc:{} nmi:{} accMax:{} nmiMax:{} curepoch:{}".format(loss.item(),epoch,acc,nmi,accMax,nmiMax,curepoch))
-                    # f.write('\n')
-                    # print()
-        # args.pretrain_path = "./final_model/best_Reuters_DMGI_Mean.pkl"
+
+
         model.load_state_dict(torch.load('saved_model/{}/best_{}_{}_{}.pkl'.format(self.args.dataset,self.args.dataset, self.args.embedder,self.args.isMeanOrCat)),False)
-        # model.load_state_dict(torch.load("./final_model/best_Reuters_DMGI_Mean.pkl"),False)
+
         model.eval()
 
         nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
 
-        genePath="generateW/{}/".format(self.args.dataset)
-        construct_graph(model.H.data.detach(),genePath+'W.txt',graph=self.labels)
+        # genePath="generateW/{}/".format(self.args.dataset)
+        # construct_graph(model.H.data.detach(),genePath+'W.txt',graph=self.labels)
 
         return nmi,acc,ari,stdacc,stdnmi,stdari,retxt
 
