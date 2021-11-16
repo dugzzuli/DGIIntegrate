@@ -12,3 +12,6 @@ from .DMGIDECSUP import DMGIDECSUP
 from .DMGINoL2 import DMGINoL2
 from .DMGIDEC_DFCN import DMGIDEC_DFCN
 from .DMGIRCGraph import DMGIRCGraph
+from .DMGIDEC_DFCN_Single import DMGIDEC_DFCN_Single
+from .DMGINoCS import DMGINoCS
+from .DMGI_Each import DMGI_Each

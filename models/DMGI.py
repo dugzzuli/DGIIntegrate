@@ -24,23 +24,19 @@ class DMGI(embedder):
         adj = [adj_.to(self.args.device) for adj_ in self.adj]
         model = modeler(self.args).to(self.args.device)
         optimiser = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=self.args.l2_coef)
-        cnt_wait = 0;
         best = 1e9
         b_xent = nn.BCEWithLogitsLoss()
         iters=tqdm(range(self.args.nb_epochs))
         accMax=-1
-        minclu_distance=1000
+
         nmiMax = -1
         ariMax=-1
         curepoch=-1
-        min_curepoh=-1
-        showResults = {}
+
         retxt=""
         if(self.args.Fine):
             for epoch in iters:
-
                 model.train()
-
                 xent_loss = None
                 optimiser.zero_grad()
                 idx = np.random.permutation(self.args.nb_nodes)
@@ -60,65 +56,44 @@ class DMGI(embedder):
                         xent_loss = b_xent(logit, lbl)
                     else:
                         xent_loss += b_xent(logit, lbl)
-
                 loss = xent_loss
-
                 reg_loss = result['reg_loss']
                 loss += self.args.reg_coef * reg_loss
-
-
-
                 if loss < best:
                     best = loss
                     cnt_wait = 0
 
-                    # torch.save(model.state_dict(), 'saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder))
                 else:
                     cnt_wait =+ 1
-
                 if cnt_wait == self.args.patience:
                     break
-
                 loss.backward()
                 optimiser.step()
                 # Evaluation
-                if(epoch%1)==0:
+                if(epoch%3)==0:
                     # print(loss)
                     model.eval()
-
                     nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
                     if(accMax<acc):
                         accMax=acc
                         nmiMax=nmi
                         ariMax=ari
                         curepoch=epoch
-                        savePath="saved_model/{}/".format(self.args.dataset)
+                        savePath = "saved_model/{}/".format(self.args.dataset)
                         mkdir(savePath)
                         torch.save(model.state_dict(),
-                                   savePath+'best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder,self.args.isMeanOrCat))
-
-
+                                   savePath + 'best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder,
+                                                                         self.args.isMeanOrCat))
 
                     retxt="loss:{} epoch:{} acc:{} nmi:{} accMax:{} nmiMax:{} ariMax:{} curepoch:{}".format(loss.item(),epoch,acc,nmi,accMax,nmiMax,ariMax,curepoch)
                     iters.set_description(retxt)
 
-                    showResults["acc"]=acc
-                    showResults["accMax"] = accMax
-
-                    if self.args.vis is not None:
-                        self.args.vis.plot_many_stack(showResults)
-                        self.args.vis.plot_many_stack({"loss:": loss.item()})
-
-
         model.load_state_dict(torch.load('saved_model/{}/best_{}_{}_{}.pkl'.format(self.args.dataset,self.args.dataset, self.args.embedder,self.args.isMeanOrCat)),False)
 
         model.eval()
-
+        with torch.no_grad():
+            _, _, _ = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
         nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
-
-        # genePath="generateW/{}/".format(self.args.dataset)
-        # construct_graph(model.H.data.detach(),genePath+'W.txt',graph=self.labels)
-
         return nmi,acc,ari,stdacc,stdnmi,stdari,retxt
 
 
@@ -189,7 +164,7 @@ class modeler(nn.Module):
 
         else:
             # print("no using attention")
-            
+
             if (self.args.isMeanOrCat == 'Mean'):
                 h_1_all = torch.mean(torch.cat(h_1_all), 0).unsqueeze(0)
                 h_2_all = torch.mean(torch.cat(h_2_all), 0).unsqueeze(0)

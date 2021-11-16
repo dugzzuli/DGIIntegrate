@@ -75,7 +75,7 @@ def run_kmeans_yypred(y_pred, y):
     NMI_list = []
     ACM_list = []
     ARI_list=[]
-    for i in range(5):
+    for i in range(1):
         acc = acc_val(np.array(y), np.array(y_pred))
         ACM_list.append(acc)
         s1 = normalized_mutual_info_score(y, y_pred)

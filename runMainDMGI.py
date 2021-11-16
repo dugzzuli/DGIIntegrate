@@ -18,7 +18,7 @@ import yaml
 
 if __name__ == '__main__':
 
-    d=['BBCSport'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
+    d=['MSRCv1'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'，‘LandUse-21’] # ['BBCSport','yale_mtv','MSRCv1','3sources']
     atten=False
     # vis = Visualizer("env")
     vis=None
@@ -69,17 +69,46 @@ if __name__ == '__main__':
             # parser.add_argument('--l2_coef', type=float, default=0.00001, help='l2_coef')
             # parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
 
+            # parser.add_argument('--lr', type=float, default=0.001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
+
             #BBCSport
-            parser.add_argument('--lr', type=float, default=0.001, help='学习率')
-            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
-            parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+            # parser.add_argument('--lr', type=float, default=0.01, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
+
+            # parser.add_argument('--lr', type=float, default=0.001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.00001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
 
             # BBC
             # parser.add_argument('--lr', type=float, default=0.01, help='学习率')
             # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
             # parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
             # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+
+            # MSRCv1
+            parser.add_argument('--lr', type=float, default=0.0001, help='学习率')
+            parser.add_argument('--hid_units', type=int, default=256, help='低维特征维度')
+            parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
+            parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
+
+            # LanUdse
+            # parser.add_argument('--lr', type=float, default=0.0001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+
+            #NUSWIDE
+            # parser.add_argument('--lr', type=float, default=0.0001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=256, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+
 
             args, unknown = parser.parse_known_args()
 
@@ -109,7 +138,7 @@ if __name__ == '__main__':
                 nmi, acc, ari, stdacc, stdnmi, stdari, retxt = embedder.training(f)
                 result = "hid_units:{},lr:{},l2_coef:{},reg_coef:{},acc:{},nmi:{},Ari:{},stdnmi:{},stdacc:{},stdari:{}".format(
                     args.hid_units, args.lr, args.l2_coef, args.reg_coef, acc, nmi, ari, stdacc, stdnmi, stdari)
-
+                print(result)
                 f.write(retxt)
                 f.write('\n')
                 f.write(result)

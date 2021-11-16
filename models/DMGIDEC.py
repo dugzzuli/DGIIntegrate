@@ -48,17 +48,11 @@ class DMGIDEC(embedder):
         y_pred_last = y_pred
         initCenter=kmeans.cluster_centers_
         model.cluster_layer.data = torch.tensor(initCenter).cuda()
-
         optimiser = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=self.args.l2_coef)
-        cnt_wait = 0;
         best = 1e9
         b_xent = nn.BCEWithLogitsLoss()
-        # iters=tqdm(range(self.args.nb_epochs))
         iters=range(self.args.nb_epochs)
-        # accMax=-1
-        # nmiMax = -1
-        # ariMax=-1
-        # curepoch=-1
+        accMax = -1
 
         for epoch in iters:
 
@@ -74,19 +68,27 @@ class DMGIDEC(embedder):
             lbl_1 = torch.ones(self.args.batch_size, self.args.nb_nodes)
             lbl_2 = torch.zeros(self.args.batch_size, self.args.nb_nodes)
             lbl = torch.cat((lbl_1, lbl_2), 1).to(self.args.device)
+
             if epoch % self.args.T == 0:
                 with torch.no_grad():
                     _, tmp_q, zTemp = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
-                tmp_q = tmp_q.data
-                p = target_distribution(tmp_q)
+                    tmp_q = tmp_q.data
+                    p = target_distribution(tmp_q)
 
                 res1 = tmp_q.cpu().numpy().argmax(1)  # Q
                 try:
-                    eva(y, res1, str(epoch) + 'Q',Flag=True)
+                    acckres1,nmikres1,arikres1,_,_,_=eva(y, res1, str(epoch) + 'Q',Flag=True)
                 except Exception:
                     print("erroir")
                 finally:
                     pass
+
+                if (accMax < acckres1):
+                    print('......')
+                    accMax = acckres1
+                    torch.save(model.state_dict(),
+                               'saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder))
+
                 res3 = p.data.cpu().numpy().argmax(1)  # P
                 try:
                     eva(y, res3, str(epoch) + 'P',Flag=True)
@@ -94,18 +96,22 @@ class DMGIDEC(embedder):
                     print("erroir")
                 finally:
                     pass
+
                 delta_label = np.sum(res3 != y_pred_last).astype(
                     np.float32) / res3.shape[0]
 
                 y_pred_last = res3
+
                 kmeans = KMeans(n_clusters=self.args.nb_classes, n_init=20)  # n_init：用不同的聚类中心初始化值运行算法的次数
                 res_k = kmeans.fit_predict(zTemp.data.cpu().numpy())  # 训练并直接预测
                 try:
-                    eva(y, res_k, str(epoch) + 'k',Flag=True)
+                    acck,nmik,arik,_,_,_=eva(y, res_k, str(epoch) + 'k',Flag=True)
                 except Exception:
                     print("erroir")
                 finally:
                     pass
+
+
 
                 if epoch > 0 and delta_label < self.args.tol:
                     print('delta_label {:.4f}'.format(delta_label), '< tol',
@@ -129,11 +135,11 @@ class DMGIDEC(embedder):
             if loss < best:
                 best = loss
                 cnt_wait = 0
-                torch.save(model.state_dict(), 'saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder))
             else:
                 cnt_wait =+ 1
             if cnt_wait == self.args.patience:
                 break
+
             loss.backward()
             optimiser.step()
 
@@ -141,14 +147,22 @@ class DMGIDEC(embedder):
 
         with torch.no_grad():
             _, tmp_q, zTemp = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
-            tmp_q = tmp_q.data
+            #使用k进行聚类，不适用tq
+            # tmp_q = tmp_q.data
+            # y_pred = tmp_q.cpu().numpy().argmax(1)
+            # train_lbls = torch.argmax(self.labels[0, :], dim=1)
+            # train_lbls = np.array(train_lbls.cpu())
+            # nmi,acc,ari,stdacc,stdnmi,stdari=eva(y_pred, train_lbls, str(-1) + 'k', Flag=True) #run_kmeans_yypred(y_pred, train_lbls)
+            kmeans = KMeans(n_clusters=self.args.nb_classes, n_init=20)  # n_init：用不同的聚类中心初始化值运行算法的次数
+            res_k = kmeans.fit_predict(zTemp.data.cpu().numpy())  # 训练并直接预测
 
-            y_pred = tmp_q.cpu().numpy().argmax(1)
-
-            train_lbls = torch.argmax(self.labels[0, :], dim=1)
-            train_lbls = np.array(train_lbls.cpu())
-            nmi,acc,ari,stdacc,stdnmi,stdari=run_kmeans_yypred(y_pred, train_lbls)
-            return nmi,acc,ari,stdacc,stdnmi,stdari,""
+            try:
+                acc, nmi, ari, _, _, _ = eva(y, res_k, str(-1) + 'k', Flag=True)
+            except Exception:
+                print("erroir")
+            finally:
+                pass
+            return nmi,acc,ari,0,0,0,""
 
 class modeler(nn.Module):
     def __init__(self, args):

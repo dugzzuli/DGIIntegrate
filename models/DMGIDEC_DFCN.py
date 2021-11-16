@@ -21,6 +21,9 @@ from torch.nn import Parameter
 from sklearn.cluster import KMeans
 import torch.nn.functional as F
 
+#将每个视角的和综合一致性的概率P加起来，进行反向监督。
+
+
 class DMGIDEC_DFCN(embedder):
     def __init__(self, args):
         embedder.__init__(self, args)
@@ -50,16 +53,12 @@ class DMGIDEC_DFCN(embedder):
         model.cluster_layer.data = torch.tensor(initCenter).cuda()
 
         optimiser = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=self.args.l2_coef)
-        cnt_wait = 0;
         best = 1e9
         b_xent = nn.BCEWithLogitsLoss()
-        # iters=tqdm(range(self.args.nb_epochs))
-        iters=range(self.args.nb_epochs)
-        # accMax=-1
-        # nmiMax = -1
-        # ariMax=-1
-        # curepoch=-1
 
+        iters=range(self.args.nb_epochs)
+
+        original_acc=-1
         for epoch in iters:
 
             model.train()
@@ -103,20 +102,27 @@ class DMGIDEC_DFCN(embedder):
                     np.float32) / res3.shape[0]
 
                 y_pred_last = res3
+
                 kmeans = KMeans(n_clusters=self.args.nb_classes, n_init=20)  # n_init：用不同的聚类中心初始化值运行算法的次数
                 res_k = kmeans.fit_predict(zTemp.data.cpu().numpy())  # 训练并直接预测
                 try:
-                    eva(y, res_k, str(epoch) + 'k',Flag=True)
+                    acck,nmik,arik,_,_,_=eva(y, res_k, str(epoch) + 'k',Flag=True)
                 except Exception:
                     print("erroir")
                 finally:
                     pass
+
+                if acck > original_acc:
+                    original_acc = acck
+                    torch.save(model.state_dict(), 'saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder))
 
                 if epoch > 0 and delta_label < self.args.tol:
                     print('delta_label {:.4f}'.format(delta_label), '< tol',
                           self.args.tol)
                     print('Reached tolerance threshold. Stopping training.')
                     break
+
+
 
             result, q, zTemp,q_list_eachview = model(features, adj, shuf, self.args.sparse, None, None, None)
 
@@ -140,7 +146,6 @@ class DMGIDEC_DFCN(embedder):
             if loss < best:
                 best = loss
                 cnt_wait = 0
-                torch.save(model.state_dict(), 'saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder))
             else:
                 cnt_wait =+ 1
             if cnt_wait == self.args.patience:
@@ -152,14 +157,25 @@ class DMGIDEC_DFCN(embedder):
 
         with torch.no_grad():
             _, tmp_q, zTemp,_ = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
-            tmp_q = tmp_q.data
 
-            y_pred = tmp_q.cpu().numpy().argmax(1)
+            #使用k进行聚类，不适用tq
+            # tmp_q = tmp_q.data
+            # y_pred = tmp_q.cpu().numpy().argmax(1)
+            # train_lbls = torch.argmax(self.labels[0, :], dim=1)
+            # train_lbls = np.array(train_lbls.cpu())
+            # nmi,acc,ari,stdacc,stdnmi,stdari=run_kmeans_yypred(y_pred, train_lbls)
 
-            train_lbls = torch.argmax(self.labels[0, :], dim=1)
-            train_lbls = np.array(train_lbls.cpu())
-            nmi,acc,ari,stdacc,stdnmi,stdari=run_kmeans_yypred(y_pred, train_lbls)
-            return nmi,acc,ari,stdacc,stdnmi,stdari,""
+            kmeans = KMeans(n_clusters=self.args.nb_classes, n_init=20)  # n_init：用不同的聚类中心初始化值运行算法的次数
+            res_k = kmeans.fit_predict(zTemp.data.cpu().numpy())  # 训练并直接预测
+            try:
+                acc, nmi, ari, _, _, _ = eva(y, res_k, str(-1) + 'k', Flag=True)
+            except Exception:
+                print("erroir")
+            finally:
+                pass
+
+
+            return nmi,acc,ari,0,0,0,""
 
 class modeler(nn.Module):
     def __init__(self, args):

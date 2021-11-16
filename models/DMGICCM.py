@@ -76,9 +76,9 @@ class DMGICCM(embedder):
 
                 for view_idx, logit in enumerate(logits):
                     if xent_loss is None:
-                        xent_loss = b_xent(logit, lbl)+ffLoss(torch.squeeze(hlist[view_idx]))*0.1
+                        xent_loss = b_xent(logit, lbl)+ffLoss(torch.squeeze(hlist[view_idx]))*100
                     else:
-                        xent_loss += b_xent(logit, lbl)+ffLoss(torch.squeeze(hlist[view_idx]))*0.1
+                        xent_loss += b_xent(logit, lbl)+ffLoss(torch.squeeze(hlist[view_idx]))*100
 
                 loss = xent_loss
 

@@ -17,7 +17,7 @@ import yaml
 
 if __name__ == '__main__':
 
-    d=['Reuters'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
+    d=['MSRCv1'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','LandUse-21']
     atten=False
     for data in d:
         for link in ['Mean']:
@@ -43,22 +43,67 @@ if __name__ == '__main__':
             parser.add_argument('--Weight', nargs='?', default=config['Weight'])
 
             parser.add_argument('--lambdapra', type=float, default=0.1, help='lambdapra')
-            parser.add_argument('--n_h', type=int, default=512, help='低维特征维度')
-            parser.add_argument('--tol', type=float, default=0.0001, help='reg_coef')
+            parser.add_argument('--n_h', type=int, default=256, help='低维特征维度')
+            parser.add_argument('--tol', type=float, default=-1, help='reg_coef')
 
             # Reuters
+            # parser.add_argument('--lr', type=float, default=0.0001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.01, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
+            # small_Reuters
+            # parser.add_argument('--lr', type=float, default=0.00001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=256, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
+            #3sources
+            # parser.add_argument('--lr', type=float, default=0.00001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=128, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.00001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
+            # parser.add_argument('--T', type=int, default=1, help='更新迭代')
+
+            #BBC
+            # parser.add_argument('--lr', type=float, default=0.001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+
+            # BBCSport
+            # parser.add_argument('--lr', type=float, default=0.00001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
+
+            # MSRCv1
             parser.add_argument('--lr', type=float, default=0.0001, help='学习率')
-            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            parser.add_argument('--l2_coef', type=float, default=0.01, help='l2_coef')
-            parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
+            parser.add_argument('--hid_units', type=int, default=256, help='低维特征维度')
+            parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
+            parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
             parser.add_argument('--T', type=int, default=10, help='更新迭代')
-            
+
+            # NUSWIDE
+            # parser.add_argument('--lr', type=float, default=0.00001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=256, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+            # parser.add_argument('--T', type=int, default=5, help='更新迭代')
+
+            # LandUse - 21
+            # parser.add_argument('--lr', type=float, default=0.00001, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+            # parser.add_argument('--T', type=int, default=10, help='更新迭代')
+
+
+
                 
             args, unknown = parser.parse_known_args()
                         
             print(args)
             args.pretrain_path = "./saved_model/{}/best_{}_{}_{}.pkl".format(args.dataset,args.dataset,"DMGI",args.isMeanOrCat)
-            args.pretrain_path = "./final_model/best_Reuters_DMGI_Mean1080ti.pkl"
+            # args.pretrain_path = "./final_model/best_Reuters_DMGI_Mean1080ti.pkl"
 
             resultsDir = 'baseline/{}/{}/{}'.format(args.isMeanOrCat,args.embedder,args.dataset)
             mkdir(resultsDir)

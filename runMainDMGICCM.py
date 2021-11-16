@@ -18,9 +18,10 @@ import yaml
 
 if __name__ == '__main__':
 
-    d = ['BBCSport']  # ['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
-    atten = True
-    vis = Visualizer("env")
+    d = ['BBC']  # ['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
+    atten = False
+
+    vis = None
     for data in d:
         for link in ['Mean']:
             config = yaml.load(open("configMain.yaml", 'r'))
@@ -44,15 +45,11 @@ if __name__ == '__main__':
             parser.add_argument('--isMeanOrCat', nargs='?', default=link)  # config[data]['isMeanOrCat']
             parser.add_argument('--Weight', nargs='?', default=config['Weight'])
 
+
             parser.add_argument('--lr', type=float, default=0.01, help='学习率')
             parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
             parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
             parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
-
-            # parser.add_argument('--lr', type=float, default=0.01, help='学习率')
-            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            # parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
-            # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
 
             args, unknown = parser.parse_known_args()
 
