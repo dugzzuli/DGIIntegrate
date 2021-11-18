@@ -18,7 +18,7 @@ import yaml
 
 if __name__ == '__main__':
 
-    d=['Caltech101-7'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'，‘LandUse-21’] # ['BBCSport','yale_mtv','MSRCv1','3sources']
+    d=['3sources'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'，‘LandUse-21’] # ['BBCSport','yale_mtv','MSRCv1','3sources']
     atten=False
     # vis = Visualizer("env")
     vis=None
@@ -69,10 +69,10 @@ if __name__ == '__main__':
             # parser.add_argument('--l2_coef', type=float, default=0.00001, help='l2_coef')
             # parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
 
-            # parser.add_argument('--lr', type=float, default=0.001, help='学习率')
-            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            # parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
-            # parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
+            parser.add_argument('--lr', type=float, default=0.01, help='学习率')
+            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
+            parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
 
             #BBCSport
             # parser.add_argument('--lr', type=float, default=0.01, help='学习率')
@@ -110,10 +110,10 @@ if __name__ == '__main__':
             # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
 
             # Caltech101-7
-            parser.add_argument('--lr', type=float, default=0.01, help='学习率')
-            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
-            parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+            # parser.add_argument('--lr', type=float, default=0.01, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
 
             args, unknown = parser.parse_known_args()
 
@@ -138,8 +138,8 @@ if __name__ == '__main__':
                 args.rownetworks, args.truefeatures_list, args.labels, args.idx_train=rownetworks, truefeatures_list, labels, idx_train 
                 
                 print(args)
-                from models import DMGI
-                embedder = DMGI(args)
+                from models import DMGICC
+                embedder = DMGICC(args)
                 nmi, acc, ari, stdacc, stdnmi, stdari, retxt = embedder.training(f)
                 result = "hid_units:{},lr:{},l2_coef:{},reg_coef:{},acc:{},nmi:{},Ari:{},stdnmi:{},stdacc:{},stdari:{}".format(
                     args.hid_units, args.lr, args.l2_coef, args.reg_coef, acc, nmi, ari, stdacc, stdnmi, stdari)

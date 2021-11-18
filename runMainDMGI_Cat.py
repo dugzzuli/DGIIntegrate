@@ -18,12 +18,12 @@ import yaml
 
 if __name__ == '__main__':
 
-    d=['Caltech101-7'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'，‘LandUse-21’] # ['BBCSport','yale_mtv','MSRCv1','3sources']
+    d=['BBC'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'，‘LandUse-21’] # ['BBCSport','yale_mtv','MSRCv1','3sources']
     atten=False
     # vis = Visualizer("env")
     vis=None
     for data in d:
-        for link in ['Mean']:
+        for link in ['Cat']:
             config = yaml.load(open("configMain.yaml", 'r'))
             
             # input arguments
@@ -86,10 +86,10 @@ if __name__ == '__main__':
             # parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
 
             # BBC
-            # parser.add_argument('--lr', type=float, default=0.01, help='学习率')
-            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            # parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
-            # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+            parser.add_argument('--lr', type=float, default=0.01, help='学习率')
+            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            parser.add_argument('--l2_coef', type=float, default=0.01, help='l2_coef')
+            parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
 
             # MSRCv1
             # parser.add_argument('--lr', type=float, default=0.0001, help='学习率')
@@ -109,11 +109,6 @@ if __name__ == '__main__':
             # parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
             # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
 
-            # Caltech101-7
-            parser.add_argument('--lr', type=float, default=0.01, help='学习率')
-            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
-            parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
 
             args, unknown = parser.parse_known_args()
 

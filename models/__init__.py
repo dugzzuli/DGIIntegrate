@@ -15,3 +15,4 @@ from .DMGIRCGraph import DMGIRCGraph
 from .DMGIDEC_DFCN_Single import DMGIDEC_DFCN_Single
 from .DMGINoCS import DMGINoCS
 from .DMGI_Each import DMGI_Each
+from .DMGICC import DMGICC

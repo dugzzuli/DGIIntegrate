@@ -21,7 +21,10 @@ from torch.nn import Parameter
 from sklearn.cluster import KMeans
 import torch.nn.functional as F
 
-class DMGIDEC(embedder):
+#将每个视角的和综合一致性的概率P加起来，进行反向监督。
+
+
+class DMGIDEC_DFCN_Single(embedder):
     def __init__(self, args):
         embedder.__init__(self, args)
         self.args = args
@@ -38,7 +41,7 @@ class DMGIDEC(embedder):
         shuf = [shuf_ft.to(self.args.device) for shuf_ft in shuf]
 
         with torch.no_grad():
-            _, _, hidden = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
+            _, _, hidden,_ = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
 
         hidden = torch.squeeze(hidden)
 
@@ -48,11 +51,13 @@ class DMGIDEC(embedder):
         y_pred_last = y_pred
         initCenter=kmeans.cluster_centers_
         model.cluster_layer.data = torch.tensor(initCenter).cuda()
+
         optimiser = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=self.args.l2_coef)
+
         best = 1e9
         b_xent = nn.BCEWithLogitsLoss()
         iters=range(self.args.nb_epochs)
-        accMax = -1
+        original_acc = -1
 
         for epoch in iters:
 
@@ -68,23 +73,26 @@ class DMGIDEC(embedder):
             lbl_1 = torch.ones(self.args.batch_size, self.args.nb_nodes)
             lbl_2 = torch.zeros(self.args.batch_size, self.args.nb_nodes)
             lbl = torch.cat((lbl_1, lbl_2), 1).to(self.args.device)
-
             if epoch % self.args.T == 0:
                 with torch.no_grad():
-                    _, tmp_q, zTemp = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
-                    tmp_q = tmp_q.data
-                    p = target_distribution(tmp_q)
+                    _, tmp_q, zTemp,temp_q_list = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
+                tmp_q = tmp_q.data
 
+                p = target_distribution(tmp_q)
+
+                #只用综合的一致性表征进行反向监督
+                # for each_q in temp_q_list:
+                #
+                #     p = p+ target_distribution(each_q.data)
+                #
+                # p=p/(self.args.nb_classes)
                 res1 = tmp_q.cpu().numpy().argmax(1)  # Q
                 try:
-                    acckres1,nmikres1,arikres1,_,_,_=eva(y, res1, str(epoch) + 'Q',Flag=True)
+                    eva(y, res1, str(epoch) + 'Q',Flag=True)
                 except Exception:
                     print("erroir")
                 finally:
                     pass
-
-
-
                 res3 = p.data.cpu().numpy().argmax(1)  # P
                 try:
                     eva(y, res3, str(epoch) + 'P',Flag=True)
@@ -93,11 +101,6 @@ class DMGIDEC(embedder):
                 finally:
                     pass
 
-                if (accMax < acckres1):
-                    print('......')
-                    accMax = acckres1
-                    torch.save(model.state_dict(),
-                               'saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder))
                 delta_label = np.sum(res3 != y_pred_last).astype(
                     np.float32) / res3.shape[0]
 
@@ -106,13 +109,16 @@ class DMGIDEC(embedder):
                 kmeans = KMeans(n_clusters=self.args.nb_classes, n_init=20)  # n_init：用不同的聚类中心初始化值运行算法的次数
                 res_k = kmeans.fit_predict(zTemp.data.cpu().numpy())  # 训练并直接预测
                 try:
-                    acck,nmik,arik,_,_,_=eva(y, res_k, str(epoch) + 'k',Flag=True)
+                    acck, nmik, arik, _, _, _ = eva(y, res_k, str(epoch) + 'k', Flag=True)
                 except Exception:
                     print("erroir")
                 finally:
                     pass
 
-
+                if acck > original_acc:
+                    original_acc = acck
+                    torch.save(model.state_dict(),
+                               'saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder))
 
                 if epoch > 0 and delta_label < self.args.tol:
                     print('delta_label {:.4f}'.format(delta_label), '< tol',
@@ -120,8 +126,14 @@ class DMGIDEC(embedder):
                     print('Reached tolerance threshold. Stopping training.')
                     break
 
-            result, q, zTemp = model(features, adj, shuf, self.args.sparse, None, None, None)
-            loss_kl = F.kl_div(q.log(), p, reduction='batchmean')  # 第一个参数传入的是一个对数概率矩阵，第二个参数传入的是概率矩阵。
+            result, q, zTemp,q_list_eachview = model(features, adj, shuf, self.args.sparse, None, None, None)
+
+
+            loss_kl = F.kl_div(q.log()
+                               , p, reduction='batchmean')  # 第一个参数传入的是一个对数概率矩阵，第二个参数传入的是概率矩阵。
+            for temp_q in q_list_eachview:
+                loss_kl =loss_kl+ F.kl_div(temp_q.log()
+                                   , p, reduction='batchmean')  # 第一个
 
             logits = result['logits']
             for view_idx, logit in enumerate(logits):
@@ -136,34 +148,26 @@ class DMGIDEC(embedder):
             if loss < best:
                 best = loss
                 cnt_wait = 0
+                torch.save(model.state_dict(), 'saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder))
             else:
                 cnt_wait =+ 1
             if cnt_wait == self.args.patience:
                 break
-
             loss.backward()
             optimiser.step()
 
         model.load_state_dict(torch.load('saved_model/best_{}_{}.pkl'.format(self.args.dataset, self.args.embedder)))
 
         with torch.no_grad():
-            _, tmp_q, zTemp = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
-            #使用k进行聚类，不适用tq
+            _, tmp_q, zTemp,_ = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
             tmp_q = tmp_q.data
+
             y_pred = tmp_q.cpu().numpy().argmax(1)
+
             train_lbls = torch.argmax(self.labels[0, :], dim=1)
             train_lbls = np.array(train_lbls.cpu())
-            nmi,acc,ari,stdacc,stdnmi,stdari=eva(y_pred, train_lbls, str(-1) + 'k', Flag=True) #run_kmeans_yypred(y_pred, train_lbls)
-            # kmeans = KMeans(n_clusters=self.args.nb_classes, n_init=20)  # n_init：用不同的聚类中心初始化值运行算法的次数
-            # res_k = kmeans.fit_predict(zTemp.data.cpu().numpy())  # 训练并直接预测
-            #
-            # try:
-            #     acc, nmi, ari, _, _, _ = eva(y, res_k, str(-1) + 'k', Flag=True)
-            # except Exception:
-            #     print("erroir")
-            # finally:
-            #     pass
-            return nmi,acc,ari,0,0,0,""
+            nmi,acc,ari,stdacc,stdnmi,stdari=run_kmeans_yypred(y_pred, train_lbls)
+            return nmi,acc,ari,stdacc,stdnmi,stdari,""
 
 class modeler(nn.Module):
     def __init__(self, args):
@@ -173,10 +177,7 @@ class modeler(nn.Module):
         self.pretrain_path = self.args.pretrain_path
         self.pretrain()
         # cluster layer
-        if (self.args.isMeanOrCat == 'Mean'):
-            self.cluster_layer = Parameter(torch.Tensor(self.args.nb_classes, self.args.hid_units))  # 对权重进行初始化
-        else:
-            self.cluster_layer = Parameter(torch.Tensor(self.args.nb_classes, self.args.hid_units** self.args.View_num))  # 对权重进行初始化
+        self.cluster_layer = Parameter(torch.Tensor(self.args.nb_classes, self.args.n_h))  # 对权重进行初始化
         torch.nn.init.xavier_normal_(self.cluster_layer.data)
     def pretrain(self, path=''):
         # load pretrain weights
@@ -189,6 +190,7 @@ class modeler(nn.Module):
 
         result= self.dmgi(feature, adj, shuf, sparse, msk, samp_bias1, samp_bias2)
         H=self.dmgi.H
+        h_list=result['h_each']
 
         # cluster
         q = 1.0 / (1.0 + torch.sum(
@@ -196,7 +198,17 @@ class modeler(nn.Module):
         q = q.pow((1 + 1.0) / 2.0)
         q = (q.t() / torch.sum(q, 1)).t()
 
-        return result, q, torch.squeeze(H)
+        q_list=[]
+        for h_single in h_list:
+            temp_q = 1.0 / (1.0 + torch.sum(
+                torch.pow(torch.squeeze(h_single).unsqueeze(1) - self.cluster_layer, 2), 2) / 1)
+            temp_q = temp_q.pow((1 + 1.0) / 2.0)
+            temp_q = (temp_q.t() / torch.sum(temp_q, 1)).t()
+            q_list.append(temp_q)
+
+
+
+        return result, q, torch.squeeze(H),q_list
 
 class DMGI(nn.Module):
     def __init__(self, args):

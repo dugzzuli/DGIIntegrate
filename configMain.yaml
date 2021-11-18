@@ -203,6 +203,15 @@ flower17:
   nb_epochs: 500
   norm: False
 
+Caltech101-7:
+  View_num: 6
+  lr: [0.01,0.001,0.0001]
+  l2_coef: [0.01,0.001,0.0001,0.00001]
+  reg_coef: [0.01,0.001,0.0001,0.00001]
+  hid: [64,128,256,512]
+  sc: 10
+  nb_epochs: 500
+  norm: False
 
 Caltech101-all:
   View_num: 6
@@ -211,7 +220,7 @@ Caltech101-all:
   reg_coef: [0.01,0.001,0.0001,0.00001]
   hid: [64,128,256,512]
   sc: 10
-  nb_epochs: 5000
+  nb_epochs: 500
   norm: False
 
 citeseer:
