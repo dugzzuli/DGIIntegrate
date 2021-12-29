@@ -17,7 +17,7 @@ import yaml
 
 if __name__ == '__main__':
 
-    d=['Reuters'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
+    d=['NUSWIDEOBJ'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
     for data in d:
         config = yaml.load(open("configMain.yaml", 'r'))
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         parser.add_argument('--dataset', nargs='?', default=data)
         parser.add_argument('--View_num',default=config[data]['View_num'])
         parser.add_argument('--norm',default=config[data]['norm'])
-        parser.add_argument('--nb_epochs', type=int, default=config[data]['nb_epochs'])
+        parser.add_argument('--nb_epochs', type=int, default=20)
         parser.add_argument('--sc', type=float,default=10.0, help='GCN self connection') #config[data]['sc']
         parser.add_argument('--gpu_num', type=int, default=0)
         parser.add_argument('--drop_prob', type=float, default=0.2)
@@ -37,9 +37,14 @@ if __name__ == '__main__':
         parser.add_argument('--Weight', nargs='?', default=config['Weight'])
 
 
-        parser.add_argument('--lr', type=float, default=0.01, help='学习率')
-        parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-        parser.add_argument('--l2_coef', type=float, default=0.01, help='l2_coef')
+        # parser.add_argument('--lr', type=float, default=0.01, help='学习率')
+        # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+        # parser.add_argument('--l2_coef', type=float, default=0.001, help='l2_coef')
+
+        parser.add_argument('--lr', type=float, default=config[data]['lr'][0], help='学习率')
+        parser.add_argument('--hid_units', type=int, default=config[data]['hid_units'][0], help='低维特征维度')
+        parser.add_argument('--l2_coef', type=float, default=config[data]['l2_coef'][0], help='l2_coef')
+        parser.add_argument('--reg_coef', type=float, default=config[data]['reg_coef'][0], help='reg_coef')
 
 
 

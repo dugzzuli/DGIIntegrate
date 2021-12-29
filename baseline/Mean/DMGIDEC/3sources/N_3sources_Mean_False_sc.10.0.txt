@@ -66,3 +66,35 @@ SC:10.0
 
 hid_units:512,lr:0.001,l2_coef:0.001,reg_coef:0.001,acc:0.5680473372781065,nmi:0.5431469992435082,Ari:0.4062000676729891,stdnmi:0.0,stdacc:0.0,stdari:0.0
 
+SC:10.0
+
+hid_units:128,lr:0.001,l2_coef:1e-05,reg_coef:1e-05,acc:0.9112426035502958,nmi:0.8080809161715857,Ari:0.8124242280601821,stdnmi:0,stdacc:0,stdari:0
+
+SC:10.0
+SC:10.0
+SC:10.0
+
+hid_units:128,lr:0.001,l2_coef:0.0001,reg_coef:0.0001,acc:0.5325443786982249,nmi:0.556753144491862,Ari:0.4004247254422607,stdnmi:0,stdacc:0,stdari:0
+
+SC:10.0
+SC:10.0
+
+hid_units:128,lr:0.0001,l2_coef:0.0001,reg_coef:0.0001,acc:0.863905325443787,nmi:0.7532894400285574,Ari:0.7248261758311991,stdnmi:0,stdacc:0,stdari:0
+
+SC:10.0
+SC:10.0
+
+hid_units:128,lr:0.0001,l2_coef:0.0001,reg_coef:0.0001,acc:0.863905325443787,nmi:0.7532894400285574,Ari:0.7248261758311991,stdnmi:0,stdacc:0,stdari:0
+
+SC:10.0
+SC:10.0
+
+hid_units:128,lr:1e-05,l2_coef:0.0001,reg_coef:0.0001,acc:0.7810650887573964,nmi:0.7341607675639437,Ari:0.6929960628698619,stdnmi:0,stdacc:0,stdari:0
+
+SC:10.0
+
+hid_units:128,lr:1e-05,l2_coef:1e-05,reg_coef:1e-05,acc:0.9171597633136095,nmi:0.8158922491293454,Ari:0.8259593133572315,stdnmi:0,stdacc:0,stdari:0
+
+SC:10.0
+SC:10.0
+SC:10.0

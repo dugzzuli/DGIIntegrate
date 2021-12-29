@@ -133,6 +133,7 @@ class DMGIDEC(embedder):
             loss = xent_loss+loss_kl*self.args.lambdapra
             reg_loss = result['reg_loss']
             loss += self.args.reg_coef * reg_loss
+
             if loss < best:
                 best = loss
                 cnt_wait = 0

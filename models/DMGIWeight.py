@@ -8,38 +8,35 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 import torch.nn as nn
 from embedder import embedder
-from layers import GCN, Discriminator, Attention
+from layers import GCN, Discriminator, Attention, get_fusion_module
 import numpy as np
-
 np.random.seed(0)
 from evaluate import evaluate
-from models import LogReg
-import pickle as pkl
-from tqdm import tqdm
 
-# 学习不衰减，效果不好
-# 主要想探索一下学习率的影响。
-class DMGINoL2(embedder):
+from tqdm import tqdm
+class DMGIWeight(embedder):
     def __init__(self, args):
         embedder.__init__(self, args)
         self.args = args
 
-    def training(self, f):
+    def training(self,f):
         features = [feature.to(self.args.device) for feature in self.features]
         adj = [adj_.to(self.args.device) for adj_ in self.adj]
         model = modeler(self.args).to(self.args.device)
-        optimiser = torch.optim.Adam(model.parameters(), lr=self.args.lr)
+        optimiser = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=self.args.l2_coef)
+        # scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size=20, gamma=0.01, last_epoch=-1)
+
         best = 1e9
         b_xent = nn.BCEWithLogitsLoss()
-        iters = tqdm(range(self.args.nb_epochs))
-        accMax = -1
+        iters=tqdm(range(self.args.nb_epochs))
+        accMax=-1
 
         nmiMax = -1
-        ariMax = -1
-        curepoch = -1
+        ariMax=-1
+        curepoch=-1
 
-        retxt = ""
-        if (self.args.Fine):
+        retxt=""
+        if(self.args.Fine):
             for epoch in iters:
                 model.train()
                 xent_loss = None
@@ -69,62 +66,59 @@ class DMGINoL2(embedder):
                     cnt_wait = 0
 
                 else:
-                    cnt_wait = + 1
+                    cnt_wait =+ 1
                 if cnt_wait == self.args.patience:
                     break
                 loss.backward()
                 optimiser.step()
-                # Evaluation
-                if (epoch % 2) == 0:
-                    # print(loss)
-                    with torch.no_grad():
-                        nmi, acc, ari, stdacc, stdnmi, stdari = evaluate(model.H.data.detach(), self.idx_train,
-                                                                         self.labels, self.args.device)
 
-                    if (accMax < acc):
-                        accMax = acc
-                        nmiMax = nmi
-                        ariMax = ari
-                        curepoch = epoch
+                # scheduler.step()
+
+                # Evaluation
+                if(epoch%3)==0:
+                    # print(loss)
+                    # model.eval()
+                    with torch.no_grad():
+                        nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
+                    if(accMax<acc):
+                        accMax=acc
+                        nmiMax=nmi
+                        ariMax=ari
+                        curepoch=epoch
                         savePath = "saved_model/{}/".format(self.args.dataset)
                         mkdir(savePath)
                         torch.save(model.state_dict(),
                                    savePath + 'best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder,
                                                                          self.args.isMeanOrCat))
 
-                    retxt = "loss:{} epoch:{} acc:{} nmi:{} accMax:{} nmiMax:{} ariMax:{} curepoch:{}".format(
-                        loss.item(), epoch, acc, nmi, accMax, nmiMax, ariMax, curepoch)
+                    retxt="loss:{} epoch:{} acc:{} nmi:{} accMax:{} nmiMax:{} ariMax:{} curepoch:{}".format(loss.item(),epoch,acc,nmi,accMax,nmiMax,ariMax,curepoch)
                     iters.set_description(retxt)
 
-        model.load_state_dict(torch.load(
-            'saved_model/{}/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.dataset, self.args.embedder,
-                                                      self.args.isMeanOrCat)), False)
+        model.load_state_dict(torch.load('saved_model/{}/best_{}_{}_{}.pkl'.format(self.args.dataset,self.args.dataset, self.args.embedder,self.args.isMeanOrCat)),False)
 
         # with torch.no_grad():
         #     _, _, _ = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
-        nmi, acc, ari, stdacc, stdnmi, stdari = evaluate(model.H.data.detach(), self.idx_train, self.labels,
-                                                         self.args.device)
-
-        return nmi, acc, ari, stdacc, stdnmi, stdari, retxt
+        nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
+        return nmi,acc,ari,stdacc,stdnmi,stdari,retxt
 
 
 class modeler(nn.Module):
     def __init__(self, args):
         super(modeler, self).__init__()
         self.args = args
-        self.gcn = nn.ModuleList([GCN(hid, args.hid_units, args.activation, args.drop_prob, args.isBias) for _, hid in
-                                  zip(range(args.nb_graphs), self.args.dims)])
+        self.gcn = nn.ModuleList([GCN(hid, args.hid_units, args.activation, args.drop_prob, args.isBias) for _,hid in zip(range(args.nb_graphs),self.args.dims)])
 
-        self.disc = Discriminator(args.hid_units)
+        self.disc=Discriminator(args.hid_units)
         # self.disc=nn.ModuleList([Discriminator(args.hid_units) for _ in range(self.args.View_num)])
 
-        if (self.args.isMeanOrCat == 'Mean'):
+
+        if(self.args.isMeanOrCat=='Mean'):
             self.H = nn.Parameter(torch.FloatTensor(1, args.nb_nodes, args.hid_units))
         else:
             self.H = nn.Parameter(torch.FloatTensor(1, args.nb_nodes, args.hid_units * self.args.View_num))
         self.readout_func = self.args.readout_func
-        if args.isAttn:
-            self.attn = nn.ModuleList([Attention(args) for _ in range(args.nheads)])
+
+        self.fusion = get_fusion_module("weighted_mean",self.args.View_num, [args.hid_units for _ in range(self.args.View_num) ])
 
         self.init_weight()
 
@@ -132,19 +126,18 @@ class modeler(nn.Module):
         nn.init.xavier_normal_(self.H)
 
     def forward(self, feature, adj, shuf, sparse, msk, samp_bias1, samp_bias2):
-        h_1_all = [];
-        h_2_all = [];
-        c_all = [];
-        logits = []
+        h_1_all = []; h_2_all = []; c_all = []; logits = []
         result = {}
 
         for i in range(self.args.nb_graphs):
             h_1 = self.gcn[i](feature[i], adj[i], sparse)
 
+
             # how to readout positive summary vector
             c = self.readout_func(h_1)
             c = self.args.readout_act_func(c)  # equation 9
             h_2 = self.gcn[i](shuf[i], adj[i], sparse)
+
 
             logit = self.disc(c, h_1, h_2, samp_bias1, samp_bias2)
 
@@ -155,35 +148,17 @@ class modeler(nn.Module):
 
         result['logits'] = logits
 
-        # Attention or not
-        if self.args.isAttn:
-            # print("using attention")
-            h_1_all_lst = [];
-            h_2_all_lst = [];
-            c_all_lst = []
 
-            for h_idx in range(self.args.nheads):
-                h_1_all_, h_2_all_, c_all_ = self.attn[h_idx](h_1_all, h_2_all, c_all)
-                h_1_all_lst.append(h_1_all_);
-                h_2_all_lst.append(h_2_all_);
-                c_all_lst.append(c_all_)
 
-            if (self.args.isMeanOrCat == 'Mean'):
-                h_1_all = torch.mean(torch.cat(h_1_all_lst), 0).unsqueeze(0)
-                h_2_all = torch.mean(torch.cat(h_2_all_lst), 0).unsqueeze(0)
-            else:
-                h_1_all = torch.cat(h_1_all_lst, 2).squeeze().unsqueeze(0)
-                h_2_all = torch.cat(h_2_all_lst, 2).squeeze().unsqueeze(0)
+        h_1_all = [ torch.squeeze(each) for each in h_1_all]
+        h_2_all = [ torch.squeeze(each) for each in h_2_all]
 
-        else:
-            # print("no using attention")
+        h_1_all=torch.unsqueeze(self.fusion(h_1_all),0)
+        h_2_all = torch.unsqueeze(self.fusion(h_2_all), 0)
 
-            if (self.args.isMeanOrCat == 'Mean'):
-                h_1_all = torch.mean(torch.cat(h_1_all), 0).unsqueeze(0)
-                h_2_all = torch.mean(torch.cat(h_2_all), 0).unsqueeze(0)
-            else:
-                h_1_all = torch.cat(h_1_all, 2).squeeze().unsqueeze(0)
-                h_2_all = torch.cat(h_2_all, 2).squeeze().unsqueeze(0)
+
+
+
 
         result["h_1_all"] = h_1_all
         # consensus regularizer
@@ -195,5 +170,6 @@ class modeler(nn.Module):
         result['reg_loss'] = reg_loss
 
         # self.h_1_all=h_1_all
+
 
         return result

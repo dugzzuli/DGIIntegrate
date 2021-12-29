@@ -26,8 +26,7 @@ def small_trick(y_test, y_pred):
             y_pred_new[i][sort_index[i][j]] = True
     return y_pred_new
 
-def lrelu(x, leak=0.2, name="lrelu"):
-    return tf.maximum(x, leak * x)
+
 
 from sklearn.cluster import KMeans
 from sklearn import metrics

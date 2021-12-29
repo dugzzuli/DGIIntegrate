@@ -27,8 +27,8 @@ if __name__ == '__main__':
             config = yaml.load(open("configMain.yaml", 'r'))
             
             # input arguments
-            parser = argparse.ArgumentParser(description='DMGI')
-            parser.add_argument('--embedder', nargs='?', default='DMGI')
+            parser = argparse.ArgumentParser(description='DMGICC')
+            parser.add_argument('--embedder', nargs='?', default='DMGICC')
             parser.add_argument('--dataset', nargs='?', default=data)
             parser.add_argument('--View_num',default=config[data]['View_num'])
             parser.add_argument('--norm',default=config[data]['norm'])

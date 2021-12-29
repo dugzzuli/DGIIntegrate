@@ -21,6 +21,9 @@ class DGI(embedder):
         adj_lst = [adj_.to(self.args.device) for adj_ in self.adj]
 
         final_embeds = []
+        each_acc=[]
+        each_nmi = []
+        each_ari = []
         for m_idx, (features, adj) in enumerate(zip(features_lst, adj_lst)):
             metapath = m_idx+1
             print("- Training on {}".format(metapath))
@@ -62,28 +65,28 @@ class DGI(embedder):
 
                 loss.backward()
                 optimiser.step()
+                if(epoch%10==0):
+                    with torch.no_grad():
+                        embeds, _ = model.embed(features, adj, self.args.sparse)
+                        nmi, acc, ari, stdacc, stdnmi, stdari = evaluate(embeds, self.idx_train, self.labels,
+                                                                         self.args.device)
+                        retxt = "metapath={} loss:{} epoch:{} acc:{} nmi:{} ari:{} curepoch:{}".format(metapath, loss.item(),
+                                                                                                 epoch, acc, nmi,ari, epoch)
+                        print(retxt)
 
-                with torch.no_grad():
-                    embeds, _ = model.embed(features, adj, self.args.sparse)
-                    nmi, acc, ari, stdacc, stdnmi, stdari = evaluate(embeds, self.idx_train, self.labels,
-                                                                     self.args.device)
-                    retxt = "metapath={} loss:{} epoch:{} acc:{} nmi:{}  curepoch:{}".format(metapath, loss.item(),
-                                                                                             epoch, acc, nmi, epoch)
-                    print(retxt)
+                        if (accMax < acc):
+                            model.eval()
+                            accMax = acc
 
-                    if (accMax < acc):
-                        model.eval()
-                        accMax = acc
-
-                        torch.save(model.state_dict(),
-                               'saved_model/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder, metapath))
+                            torch.save(model.state_dict(),
+                                   'saved_model/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder, metapath))
 
             model.load_state_dict(torch.load('saved_model/best_{}_{}_{}.pkl'.format(self.args.dataset, self.args.embedder, metapath)))
 
             # Evaluation
             embeds, _ = model.embed(features, adj, self.args.sparse)
             nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(embeds, self.idx_train, self.labels, self.args.device)
-            retxt = "metapath={} loss:{} epoch:{} acc:{} nmi:{}  curepoch:{}".format(metapath,loss.item(),epoch, acc, nmi,epoch)
+            retxt = "metapath={} loss:{} epoch:{} acc:{} nmi:{} ari:{} curepoch:{}".format(metapath,loss.item(),epoch, acc, nmi,ari,epoch)
             print(retxt)
             f.write(retxt)
             f.write("\n")
@@ -92,7 +95,7 @@ class DGI(embedder):
         embeds = torch.mean(torch.cat(final_embeds), 0).unsqueeze(0)
         print("- Integrated")
         nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(embeds, self.idx_train, self.labels, self.args.device)
-        retxt1 = "alll_mean=loss:{} epoch:{} acc:{} nmi:{}  curepoch:{}".format(loss.item(), epoch, acc, nmi, epoch)
+        retxt1 = "alll_cat=loss:{} epoch:{} acc:{} nmi:{} ari:{}  curepoch:{}".format(loss.item(), epoch, acc, nmi,ari, epoch)
         print(retxt1)
 
         f.write(retxt1)
@@ -101,7 +104,7 @@ class DGI(embedder):
         embeds = torch.cat(final_embeds,2)
         print("- Integrated")
         nmi, acc, ari, stdacc, stdnmi, stdari = evaluate(embeds, self.idx_train, self.labels, self.args.device)
-        retxt2 = "alll_cat=loss:{} epoch:{} acc:{} nmi:{}  curepoch:{}".format(loss.item(), epoch, acc, nmi, epoch)
+        retxt2 = "alll_cat=loss:{} epoch:{} acc:{} nmi:{} ari:{}  curepoch:{}".format(loss.item(), epoch, acc, nmi,ari, epoch)
         print(retxt2)
 
         return nmi,acc,ari,stdacc,stdnmi,stdari,retxt2

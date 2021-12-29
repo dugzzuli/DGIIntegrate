@@ -1777,3 +1777,15 @@ SC:10.0
 hid_units:512,lr:0.001,l2_coef:0.0001,reg_coef:0.001,acc:0.9742647058823529,nmi:0.9207735018900733,Ari:0.930272603352745,stdnmi:0,stdacc:0,stdari:0
 
 SC:10.0
+SC:10.0
+SC:10.0
+SC:10.0
+
+hid_units:512,lr:1e-05,l2_coef:0.001,reg_coef:1e-05,acc:0.9779411764705882,nmi:0.9251474142068058,Ari:0.9364480055364683,stdnmi:0,stdacc:0,stdari:0
+
+SC:10.0
+SC:10.0
+SC:10.0
+
+hid_units:512,lr:0.0001,l2_coef:1e-05,reg_coef:0.0001,acc:0.9276855760532645,nmi:0.9779411764705882,Ari:0.9369859348373528,stdnmi:0,stdacc:0,stdari:0
+

@@ -1,8 +1,8 @@
 import numpy as np
 from munkres import Munkres, print_matrix
 from sklearn.metrics.cluster import normalized_mutual_info_score as nmi_score
-from sklearn.metrics import adjusted_rand_score as ari_score
-from scipy.optimize import linear_sum_assignment as linear
+from sklearn.metrics import adjusted_rand_score as ari_score, confusion_matrix
+from scipy.optimize import linear_sum_assignment as linear, linear_sum_assignment
 from sklearn import metrics
 
 
@@ -53,7 +53,9 @@ def cluster_acc(y_true, y_pred):
         ai = [ind for ind, elm in enumerate(y_pred) if elm == c2]
         new_predict[ai] = c
 
-    acc = metrics.accuracy_score(y_true, new_predict)
+    acc,mat= ordered_cmat(y_true, new_predict)
+    print("\n")
+    print(mat)
     f1_macro = metrics.f1_score(y_true, new_predict, average='macro')
     precision_macro = metrics.precision_score(y_true, new_predict, average='macro')
     recall_macro = metrics.recall_score(y_true, new_predict, average='macro')
@@ -62,6 +64,22 @@ def cluster_acc(y_true, y_pred):
     recall_micro = metrics.recall_score(y_true, new_predict, average='micro')
     return acc, f1_macro
 
+def ordered_cmat(labels, pred):
+    """
+    Compute the confusion matrix and accuracy corresponding to the best cluster-to-class assignment.
+
+    :param labels: Label array
+    :type labels: np.array
+    :param pred: Predictions array
+    :type pred: np.array
+    :return: Accuracy and confusion matrix
+    :rtype: Tuple[float, np.array]
+    """
+    cmat = confusion_matrix(labels, pred)
+    ri, ci = linear_sum_assignment(-cmat)
+    ordered = cmat[np.ix_(ri, ci)]
+    acc = np.sum(np.diag(ordered))/np.sum(ordered)
+    return acc, ordered
 
 def eva(y_true, y_pred, epoch=0,Flag=True):
     acc, f1 = cluster_acc(y_true, y_pred)

@@ -17,7 +17,7 @@ import yaml
 
 if __name__ == '__main__':
 
-    d=['BBC'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
+    d=['3sources'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'] # ['BBCSport','yale_mtv','MSRCv1','3sources']
     atten=False
     for data in d:
         for link in ['Mean']:
@@ -29,7 +29,7 @@ if __name__ == '__main__':
             parser.add_argument('--dataset', nargs='?', default=data)
             parser.add_argument('--View_num',default=config[data]['View_num'])
             parser.add_argument('--norm',default=config[data]['norm'])
-            parser.add_argument('--nb_epochs', type=int, default=config[data]['nb_epochs'])
+            parser.add_argument('--nb_epochs', type=int, default=config[data]['DEC_nb_epochs'])
             parser.add_argument('--sc', type=float,default=10.0, help='GCN self connection') #config[data]['sc']
             parser.add_argument('--gpu_num', type=int, default=0)
             parser.add_argument('--drop_prob', type=float, default=0.2)
@@ -43,15 +43,13 @@ if __name__ == '__main__':
             parser.add_argument('--Weight', nargs='?', default=config['Weight'])
 
             parser.add_argument('--lambdapra', type=float, default=0.1, help='lambdapra')
-            parser.add_argument('--n_h', type=int, default=512, help='低维特征维度')
             parser.add_argument('--tol', type=float, default=-1, help='reg_coef')
 
-            # Reuters
-            parser.add_argument('--lr', type=float, default=0.0001, help='学习率')
-            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            parser.add_argument('--l2_coef', type=float, default=0.01, help='l2_coef')
-            parser.add_argument('--reg_coef', type=float, default=0.0001, help='reg_coef')
-            parser.add_argument('--T', type=int, default=1, help='更新迭代')
+            parser.add_argument('--lr', type=float, default=0.001, help='学习率')
+            parser.add_argument('--hid_units', type=int, default=128, help='低维特征维度')
+            parser.add_argument('--l2_coef', type=float, default=0.00001, help='l2_coef')
+            parser.add_argument('--reg_coef', type=float, default=0.00001, help='reg_coef')
+            parser.add_argument('--T', type=int, default=3, help='更新迭代')
             
                 
             args, unknown = parser.parse_known_args()

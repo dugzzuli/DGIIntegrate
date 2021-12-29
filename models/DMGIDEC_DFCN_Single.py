@@ -80,12 +80,6 @@ class DMGIDEC_DFCN_Single(embedder):
 
                 p = target_distribution(tmp_q)
 
-                #只用综合的一致性表征进行反向监督
-                # for each_q in temp_q_list:
-                #
-                #     p = p+ target_distribution(each_q.data)
-                #
-                # p=p/(self.args.nb_classes)
                 res1 = tmp_q.cpu().numpy().argmax(1)  # Q
                 try:
                     eva(y, res1, str(epoch) + 'Q',Flag=True)
@@ -177,7 +171,7 @@ class modeler(nn.Module):
         self.pretrain_path = self.args.pretrain_path
         self.pretrain()
         # cluster layer
-        self.cluster_layer = Parameter(torch.Tensor(self.args.nb_classes, self.args.n_h))  # 对权重进行初始化
+        self.cluster_layer = Parameter(torch.Tensor(self.args.nb_classes, self.args.hid_units))  # 对权重进行初始化
         torch.nn.init.xavier_normal_(self.cluster_layer.data)
     def pretrain(self, path=''):
         # load pretrain weights

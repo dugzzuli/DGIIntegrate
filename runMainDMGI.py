@@ -18,7 +18,7 @@ import yaml
 
 if __name__ == '__main__':
 
-    d=['Caltech101-7'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'，‘LandUse-21’] # ['BBCSport','yale_mtv','MSRCv1','3sources']
+    d=['3sources'] #['Reuters','yale_mtv','MSRCv1','3sources','small_Reuters','small_NUS','BBC','BBCSport'，‘LandUse-21’] # ['BBCSport','yale_mtv','MSRCv1','3sources']
     atten=False
     # vis = Visualizer("env")
     vis=None
@@ -110,10 +110,15 @@ if __name__ == '__main__':
             # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
 
             # Caltech101-7
-            parser.add_argument('--lr', type=float, default=0.01, help='学习率')
-            parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
-            parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
-            parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+            # parser.add_argument('--lr', type=float, default=0.01, help='学习率')
+            # parser.add_argument('--hid_units', type=int, default=512, help='低维特征维度')
+            # parser.add_argument('--l2_coef', type=float, default=0.0001, help='l2_coef')
+            # parser.add_argument('--reg_coef', type=float, default=0.001, help='reg_coef')
+
+            parser.add_argument('--lr', type=float, default=config[data]['lr'][0], help='学习率')
+            parser.add_argument('--hid_units', type=int, default=config[data]['hid_units'][0], help='低维特征维度')
+            parser.add_argument('--l2_coef', type=float, default=config[data]['l2_coef'][0], help='l2_coef')
+            parser.add_argument('--reg_coef', type=float, default=config[data]['reg_coef'][0], help='reg_coef')
 
             args, unknown = parser.parse_known_args()
 

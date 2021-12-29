@@ -60,3 +60,4 @@ SC:10.0
 
 hid_units:512,lr:0.001,l2_coef:1e-05,reg_coef:1e-05,acc:0.5691666666666667,nmi:0.3923819036893824,Ari:0.2658257503068255,stdnmi:0.0,stdacc:0.0,stdari:0.0
 
+SC:10.0

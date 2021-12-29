@@ -18,7 +18,8 @@ from tqdm import tqdm
 from models.Decoder import Decoder
 import torch.nn.functional as F
 
-class DMGIAE(embedder):
+#使用一致性表征进行重构每一个视角的数据
+class DMGICCAE(embedder):
     def __init__(self, args):
         embedder.__init__(self, args)
         self.args = args
@@ -116,6 +117,7 @@ class modeler(nn.Module):
         else:
             self.H = nn.Parameter(torch.FloatTensor(1, args.nb_nodes, args.hid_units * self.args.View_num))
         self.readout_func = self.args.readout_func
+
         if args.isAttn:
             self.attn = nn.ModuleList([Attention(args) for _ in range(args.nheads)])
 
@@ -127,12 +129,10 @@ class modeler(nn.Module):
     def forward(self, feature, adj, shuf, sparse, msk, samp_bias1, samp_bias2):
         h_1_all = []; h_2_all = []; c_all = []; logits = []
         result = {}
-        x_proList=[]
+
         for i in range(self.args.nb_graphs):
             h_1 = self.gcn[i](feature[i], adj[i], sparse)
 
-            x_pro = self.decoders[i](torch.squeeze(h_1))
-            x_proList.append(x_pro)
             # how to readout positive summary vector
             c = self.readout_func(h_1)
             c = self.args.readout_act_func(c)  # equation 9
@@ -147,7 +147,7 @@ class modeler(nn.Module):
             logits.append(logit)
 
         result['logits'] = logits
-        result["x_proList"]=x_proList
+
 
 
 
@@ -186,6 +186,12 @@ class modeler(nn.Module):
         result['reg_loss'] = reg_loss
 
         # self.h_1_all=h_1_all
+        x_proList = []
+        for i in range(self.args.nb_graphs):
+            x_pro = self.decoders[i](torch.squeeze(self.H))
+            x_proList.append(x_pro)
+
+        result["x_proList"] = x_proList
 
 
         return result

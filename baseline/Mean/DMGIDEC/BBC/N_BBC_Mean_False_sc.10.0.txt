@@ -35,3 +35,14 @@ SC:10.0
 
 hid_units:512,lr:0.0001,l2_coef:0.01,reg_coef:1e-05,acc:0.9386861313868613,nmi:0.8264687864101095,Ari:0.8539445377908972,stdnmi:0,stdacc:0,stdari:0
 
+SC:10.0
+SC:10.0
+SC:10.0
+SC:10.0
+SC:10.0
+SC:10.0
+SC:10.0
+SC:10.0
+
+hid_units:512,lr:0.001,l2_coef:0.001,reg_coef:0.001,acc:0.9328467153284672,nmi:0.8105438152002633,Ari:0.8417707438533122,stdnmi:0,stdacc:0,stdari:0
+

@@ -24,6 +24,8 @@ class DMGI(embedder):
         adj = [adj_.to(self.args.device) for adj_ in self.adj]
         model = modeler(self.args).to(self.args.device)
         optimiser = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=self.args.l2_coef)
+        # scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size=20, gamma=0.01, last_epoch=-1)
+
         best = 1e9
         b_xent = nn.BCEWithLogitsLoss()
         iters=tqdm(range(self.args.nb_epochs))
@@ -69,11 +71,15 @@ class DMGI(embedder):
                     break
                 loss.backward()
                 optimiser.step()
+
+                # scheduler.step()
+
                 # Evaluation
                 if(epoch%3)==0:
                     # print(loss)
-                    model.eval()
-                    nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
+                    # model.eval()
+                    with torch.no_grad():
+                        nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
                     if(accMax<acc):
                         accMax=acc
                         nmiMax=nmi
@@ -90,9 +96,8 @@ class DMGI(embedder):
 
         model.load_state_dict(torch.load('saved_model/{}/best_{}_{}_{}.pkl'.format(self.args.dataset,self.args.dataset, self.args.embedder,self.args.isMeanOrCat)),False)
 
-        model.eval()
-        with torch.no_grad():
-            _, _, _ = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
+        # with torch.no_grad():
+        #     _, _, _ = model(features, adj, shuf, self.args.sparse, None, None, None)  # 解码784，编码10
         nmi,acc,ari,stdacc,stdnmi,stdari=evaluate(model.H.data.detach(), self.idx_train, self.labels, self.args.device)
         return nmi,acc,ari,stdacc,stdnmi,stdari,retxt
 
